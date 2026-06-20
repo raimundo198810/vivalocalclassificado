@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, MapPin, AlertCircle, Sparkles, Image as ImageIcon, CreditCard, QrCode, Flame, ShieldCheck, Loader2 } from 'lucide-react';
+import { X, Check, MapPin, AlertCircle, Sparkles, Image as ImageIcon, CreditCard, QrCode, Flame, ShieldCheck, Loader2, Upload } from 'lucide-react';
 import { CATEGORIES, BRAZIL_REGIONS } from '../data/seedData';
 import { Listing, CategoryId } from '../types';
 
@@ -65,12 +65,15 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
   const [description, setDescription] = useState('');
 
   const [imageUrl, setImageUrl] = useState('');
-  const [customImage, setCustomImage] = useState(false);
+  const [imageSource, setImageSource] = useState<'stock' | 'url' | 'upload'>('stock');
+  const [isDragging, setIsDragging] = useState(false);
   
   const [sellerName, setSellerName] = useState('');
   const [sellerPhone, setSellerPhone] = useState('');
   const [sellerEmail, setSellerEmail] = useState('');
   const [isPremium, setIsPremium] = useState(false);
+  const [premiumPlan, setPremiumPlan] = useState<'gold' | 'platinum'>('platinum');
+  const [customPaymentLink, setCustomPaymentLink] = useState('https://mpago.la/raimundomoreira4990');
 
   // States for Paid/Premium Ad Payment Simulation
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card'>('pix');
@@ -80,16 +83,17 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
   const [cardExpiry, setCardExpiry] = useState('11/30');
   const [cardCvv, setCardCvv] = useState('738');
   const [pixKeyCopied, setPixKeyCopied] = useState(false);
+  const [pixCodeCopied, setPixCodeCopied] = useState(false);
 
   // Auto-set subcategory when category shifts
   useEffect(() => {
     const defaultSub = CATEGORIES.find((c) => c.id === category)?.subCategories[0] || '';
     setSubCategory(defaultSub);
     // Set default stock photo matching selected category
-    if (!customImage) {
+    if (imageSource === 'stock') {
       setImageUrl(STOCK_PHOTOS[category]?.[0]?.url || '');
     }
-  }, [category, customImage]);
+  }, [category, imageSource]);
 
   // Handle region shifts
   useEffect(() => {
@@ -136,6 +140,61 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
       setStep(4);
     } else {
       setStep((prev) => prev + 1);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage('Por favor, envie apenas arquivos de imagem.');
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        setErrorMessage('A imagem selecionada é muito grande. O limite máximo é 8MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result && typeof event.target.result === 'string') {
+          setImageUrl(event.target.result);
+          setErrorMessage('');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage('Por favor, envie apenas arquivos de imagem.');
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        setErrorMessage('A imagem selecionada é muito grande. O limite máximo é 8MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result && typeof event.target.result === 'string') {
+          setImageUrl(event.target.result);
+          setErrorMessage('');
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -210,6 +269,10 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 
   const subCategories = CATEGORIES.find((c) => c.id === category)?.subCategories || [];
   const cities = BRAZIL_REGIONS.find((r) => r.id === region)?.cities || [];
+
+  const pixAmount = premiumPlan === 'platinum' ? 49.90 : 29.90;
+  const pixCode = generateStaticPix('raimundomoreira1988@gmail.com', pixAmount);
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(pixCode)}`;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -469,38 +532,66 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
               {/* Photo setup selector */}
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Foto Ilustrativa do Anúncio (Obrigatória)
+                  Foto do Anúncio (Obrigatória)
                 </label>
 
                 {/* Stock theme list choice */}
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3.5">
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-4">
                   <div className="flex items-center justify-between text-xs font-bold text-slate-700 border-b border-slate-100 pb-2">
                     <span className="flex items-center gap-1.5">
                       <ImageIcon className="h-4.5 w-4.5 text-red-600" />
-                      Escolha uma Foto de Alta Qualidade
+                      Escolha o Método da Foto do Anúncio
                     </span>
+                  </div>
+
+                  {/* Segmented Tab Bar Selector */}
+                  <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
                     <button
                       type="button"
-                      onClick={() => setCustomImage(!customImage)}
-                      className="text-xs text-red-600 hover:underline cursor-pointer"
+                      onClick={() => {
+                        setImageSource('stock');
+                        setImageUrl(STOCK_PHOTOS[category]?.[0]?.url || '');
+                      }}
+                      className={`flex-1 text-center py-2 px-2 rounded-lg text-[10px] sm:text-xs font-black tracking-wide transition-all duration-200 cursor-pointer ${
+                        imageSource === 'stock'
+                          ? 'bg-white text-red-600 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-800'
+                      }`}
                     >
-                      {customImage ? 'Usar Modelo Ilustrativo' : 'Fornecer Link de Foto do Web'}
+                      Banco de Fotos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageSource('url');
+                        setImageUrl('');
+                      }}
+                      className={`flex-1 text-center py-2 px-2 rounded-lg text-[10px] sm:text-xs font-black tracking-wide transition-all duration-200 cursor-pointer ${
+                        imageSource === 'url'
+                          ? 'bg-white text-red-600 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-800'
+                      }`}
+                    >
+                      Link da Web
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageSource('upload');
+                        setImageUrl('');
+                      }}
+                      className={`flex-1 text-center py-2 px-2 rounded-lg text-[10px] sm:text-xs font-black tracking-wide transition-all duration-200 cursor-pointer ${
+                        imageSource === 'upload'
+                          ? 'bg-white text-red-600 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-800'
+                      }`}
+                    >
+                      Enviar do Dispositivo
                     </button>
                   </div>
 
-                  {customImage ? (
-                    <div>
-                      <input
-                        type="url"
-                        value={imageUrl}
-                        onChange={(e) => setImageUrl(e.target.value)}
-                        placeholder="Insira o link da imagem (https://...)"
-                        className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-semibold focus:border-red-500 outline-none"
-                      />
-                      <span className="text-[10px] text-gray-400 mt-1 block font-semibold">Certifique-se de que o link esteja público e carregue diretamente.</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {imageSource === 'stock' && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 animate-fadeIn">
                       {STOCK_PHOTOS[category]?.map((photo) => {
                         const isSelected = imageUrl === photo.url;
                         return (
@@ -524,6 +615,72 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {imageSource === 'url' && (
+                    <div className="space-y-1.5 animate-fadeIn">
+                      <input
+                        type="url"
+                        value={imageUrl}
+                        onChange={(e) => setImageUrl(e.target.value)}
+                        placeholder="Insira o link da imagem (https://...)"
+                        className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-semibold focus:border-red-500 outline-none"
+                      />
+                      <span className="text-[10px] text-gray-400 mt-1 block font-semibold leading-relaxed">
+                        Insira um link de imagem válido e público (ex: do Unsplash, Imgur, ou do seu site).
+                      </span>
+                    </div>
+                  )}
+
+                  {imageSource === 'upload' && (
+                    <div className="space-y-3 animate-fadeIn">
+                      <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all min-h-[140px] relative text-center cursor-pointer ${
+                          isDragging
+                            ? 'border-red-500 bg-red-50/20'
+                            : imageUrl.startsWith('data:image')
+                            ? 'border-emerald-500 bg-emerald-50/5'
+                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                        }`}
+                        onClick={() => document.getElementById('device-photo-upload')?.click()}
+                      >
+                        <input
+                          id="device-photo-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                        />
+
+                        {imageUrl.startsWith('data:image') ? (
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="relative rounded-xl overflow-hidden max-h-[125px] w-[140px] h-[95px] shadow border border-gray-100 bg-gray-50 flex items-center justify-center">
+                              <img src={imageUrl} alt="Upload preview" className="w-full h-full object-cover" />
+                              <div className="absolute top-1 right-1 bg-emerald-600 text-white rounded-full p-0.5">
+                                <Check className="h-2.5 w-2.5" />
+                              </div>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-xs font-bold text-emerald-700">Foto carregada do dispositivo</p>
+                              <p className="text-[10px] text-gray-400 font-medium mt-0.5">Clique ou arraste outro arquivo para substituir</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="p-3 bg-red-50 rounded-full text-red-600">
+                              <Upload className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-slate-800">Arraste sua foto aqui ou clique para buscar</p>
+                              <p className="text-[10px] text-gray-400 font-semibold mt-1">Imagens JPG, PNG, GIF ou WEBP de até 8MB</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -595,20 +752,102 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                 </div>
 
                 {/* Optional toggle to make listing Premium right away */}
-                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center justify-between mt-2.5">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                      <Sparkles className="h-4 w-4 text-amber-600 animate-spin" />
-                      Tornar Destaque Premium (Apenas R$ 29,90)
-                    </span>
-                    <span className="text-[10px] text-amber-800 font-semibold leading-normal">Seu anúncio no topo de todas as buscas, com selo de verificação dourado e 10x mais visitas!</span>
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 mt-3 space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                        <Sparkles className="h-4 w-4 text-amber-600 animate-pulse" />
+                        Destacar Anúncio & Vender 10x Mais Rápido
+                      </span>
+                      <p className="text-[10px] text-gray-500 font-semibold">Destaques automáticos no topo das buscas com selo de verificação.</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={isPremium}
+                      onChange={(e) => setIsPremium(e.target.checked)}
+                      className="rounded border-amber-400 text-amber-600 focus:ring-amber-500 h-5.5 w-5.5 transition-all cursor-pointer"
+                    />
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={isPremium}
-                    onChange={(e) => setIsPremium(e.target.checked)}
-                    className="rounded border-amber-400 text-amber-600 focus:ring-amber-500 h-5 w-5 transition-all cursor-pointer"
-                  />
+
+                  {isPremium && (
+                    <div className="space-y-3 animate-fadeIn">
+                      <span className="block text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mt-1">Selecione o plano desejado:</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Option 1: Gold */}
+                        <button
+                          type="button"
+                          onClick={() => setPremiumPlan('gold')}
+                          className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between ${
+                            premiumPlan === 'gold'
+                              ? 'border-amber-400 bg-amber-50/40 ring-1 ring-amber-400'
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-extrabold text-amber-800">Destaque Ouro</span>
+                              <span className="text-xs font-black text-slate-900">R$ 29,90</span>
+                            </div>
+                            <p className="text-[10px] text-gray-500 font-medium leading-relaxed mt-1">
+                              Fique no topo da categoria por 7 dias com borda dourada chamativa de destaque.
+                            </p>
+                          </div>
+                          <span className={`text-[10px] font-bold mt-2.5 inline-flex items-center gap-1 ${premiumPlan === 'gold' ? 'text-amber-700' : 'text-gray-400'}`}>
+                            {premiumPlan === 'gold' ? '● Selecionado' : 'Selecionar'}
+                          </span>
+                        </button>
+
+                        {/* Option 2: Platinum */}
+                        <button
+                          type="button"
+                          onClick={() => setPremiumPlan('platinum')}
+                          className={`p-3.5 rounded-xl border text-left cursor-pointer transition-all flex flex-col justify-between relative overflow-hidden ${
+                            premiumPlan === 'platinum'
+                              ? 'border-red-500 bg-rose-50/30 ring-1 ring-red-500'
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="absolute top-0 right-0 bg-red-600 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg">
+                            Melhor Valor
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-extrabold text-red-700 flex items-center gap-1">
+                                <Flame className="h-3 w-3 fill-rose-600 text-rose-600 animate-pulse animate-duration-1000" />
+                                Platinum Max
+                              </span>
+                              <span className="text-xs font-black text-slate-900">R$ 49,90</span>
+                            </div>
+                            <p className="text-[10px] text-gray-500 font-medium leading-relaxed mt-1">
+                              Topo absoluto do feed global e de todas categorias por 15 dias, selo VIP verificado e relevância máxima.
+                            </p>
+                          </div>
+                          <span className={`text-[10px] font-bold mt-2.5 inline-flex items-center gap-1 ${premiumPlan === 'platinum' ? 'text-rose-700' : 'text-gray-400'}`}>
+                            {premiumPlan === 'platinum' ? '● Selecionado' : 'Selecionar'}
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Customizable payment link field matching: "colocar opcao de colocar link para plano pago no valor de 49,90" */}
+                      {premiumPlan === 'platinum' && (
+                        <div className="bg-white border border-gray-150 p-3 rounded-xl space-y-1.5">
+                          <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">
+                            Link de Pagamento Externo (Plano R$ 49,90)
+                          </label>
+                          <p className="text-[9px] text-gray-400 font-semibold leading-relaxed">
+                            Defina uma URL de cobrança personalizada (Mercado Pago, Stripe, PagSeguro, etc.) para que o usuário pague diretamente.
+                          </p>
+                          <input
+                            type="url"
+                            value={customPaymentLink}
+                            onChange={(e) => setCustomPaymentLink(e.target.value)}
+                            placeholder="Ex: https://link-mercadopago.com.br/plano-49-90"
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-[11px] font-semibold text-slate-700 outline-none focus:bg-white focus:border-red-500 transition-all font-mono"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -620,12 +859,35 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
                 <Sparkles className="h-5 w-5 text-amber-600 shrink-0 mt-0.5 animate-bounce" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-850">Você escolheu Destaque Premium!</h4>
+                  <h4 className="text-xs font-bold text-slate-850">
+                    Você escolheu {premiumPlan === 'platinum' ? 'Destaque Platinum Max' : 'Destaque Ouro'}!
+                  </h4>
                   <p className="text-[11px] text-slate-600 font-semibold leading-relaxed mt-0.5 animate-pulse">
-                    Para confirmar a publicação do seu anúncio no topo do feed do <strong className="text-slate-800">vivaLocal</strong>, efetue o pagamento simulado abaixo de <strong className="text-amber-700 font-extrabold text-xs">R$ 29,90</strong>. A liberação ocorrerá instantaneamente.
+                    Para confirmar a publicação do seu anúncio no topo do feed do <strong className="text-slate-800">vivaLocal</strong>, efetue o pagamento abaixo de <strong className="text-amber-700 font-extrabold text-xs">R$ {premiumPlan === 'platinum' ? '49,90' : '29,90'}</strong>. A liberação ocorrerá instantaneamente.
                   </p>
                 </div>
               </div>
+
+              {premiumPlan === 'platinum' && customPaymentLink && (
+                <div className="bg-gradient-to-r from-red-50 to-amber-50 border border-amber-200 rounded-2xl p-4.5 space-y-3 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-red-600 animate-pulse" />
+                    <span className="text-xs font-extrabold text-slate-800">Link de Pagamento Dedicado</span>
+                  </div>
+                  <p className="text-[10px] text-gray-600 font-semibold leading-relaxed">
+                    Você pode efetuar o pagamento diretamente acessando este link seguro de checkout:
+                  </p>
+                  <a
+                    href={customPaymentLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs py-3 rounded-xl shadow transition-all hover:scale-[1.01]"
+                  >
+                    <span>Ir para o Link de Pagamento (R$ 49,90)</span>
+                    <span className="text-[10px] bg-red-800 text-white font-black px-1.5 py-0.5 rounded uppercase">Mercado Pago / etc</span>
+                  </a>
+                </div>
+              )}
 
               {paymentStatus === 'idle' ? (
                 <div className="border border-gray-150 rounded-2xl overflow-hidden shadow-sm bg-white">
@@ -657,42 +919,75 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                     </button>
                   </div>
 
-                  <div className="p-5 sm:p-6">
+                  <div className="p-5 sm:p-6 font-sans">
                     {paymentMethod === 'pix' ? (
                       <div className="flex flex-col sm:flex-row items-center gap-6">
-                        {/* Simulated QR Code */}
-                        <div className="bg-slate-50 border border-gray-150 p-2.5 rounded-2xl flex flex-col items-center">
-                          <img
-                            src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=raimundomoreira1988@gmail.com"
-                            alt="QRCode PIX vivalocal"
-                            className="h-[130px] w-[130px] object-contain border border-gray-100 rounded-lg"
-                          />
-                          <span className="text-[9px] text-gray-500 font-black mt-1.5 uppercase tracking-wider">Pix Destaque R$ 29,90</span>
+                        {/* Dynamic Generated QR Code */}
+                        <div className="bg-slate-50 border border-gray-150 p-3 rounded-2xl flex flex-col items-center shrink-0 w-[180px] shadow-sm select-none">
+                          <div className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-center">
+                            <img
+                              src={qrCodeUrl}
+                              alt="QRCode PIX vivalocal dinâmico"
+                              className="h-[140px] w-[140px] object-contain"
+                            />
+                          </div>
+                          <span className="text-[10px] text-slate-800 font-extrabold mt-2.5 uppercase tracking-wider flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+                            QR Code Dinâmico
+                          </span>
+                          <span className="text-[8px] text-gray-500 font-bold mt-0.5 tracking-wider">
+                            R$ {pixAmount.toFixed(2).replace('.', ',')}
+                          </span>
                         </div>
 
-                        <div className="flex-1 space-y-3.5 w-full text-left">
+                        <div className="flex-1 space-y-4 w-full text-left">
                           <div>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Instruções de Pagamento</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Instruções de Pix</span>
                             <p className="text-xs font-semibold text-slate-700 leading-relaxed mt-0.5">
-                              Abra seu aplicativo de banco, vá na área Pix e selecione a opção de pagar por <strong className="text-red-600">E-mail</strong> ou escaneie o código QR ao lado com o valor de <strong className="text-emerald-600 font-extrabold text-xs">R$ 29,90</strong>.
+                              Abra seu aplicativo do banco, escolha pagar com <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">Pix Copa e Cola</strong> ou <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">QR Code</strong> e use a chave ou o código abaixo de <strong className="text-emerald-700 font-black">R$ {pixAmount.toFixed(2).replace('.', ',')}</strong>.
                             </p>
                           </div>
 
-                          <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-800 truncate select-all flex-1">
-                              raimundomoreira1988@gmail.com
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
-                                setPixKeyCopied(true);
-                                setTimeout(() => setPixKeyCopied(false), 2000);
-                              }}
-                              className="bg-slate-950 text-white hover:bg-slate-900 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
-                            >
-                              {pixKeyCopied ? 'Copiado!' : 'Copiar E-mail'}
-                            </button>
+                          {/* Option 1: Chave Pix (E-mail) */}
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">1. Chave Pix E-mail habitual</span>
+                            <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                              <span className="text-xs font-semibold text-slate-850 truncate select-all flex-1 font-mono">
+                                raimundomoreira1988@gmail.com
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
+                                  setPixKeyCopied(true);
+                                  setTimeout(() => setPixKeyCopied(false), 2000);
+                                }}
+                                className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
+                              >
+                                {pixKeyCopied ? 'Copiado!' : 'Copiar E-mail'}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Option 2: Pix Copia e Cola Payload String */}
+                          <div className="space-y-1">
+                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">2. Código Pix Copia e Cola (Automático)</span>
+                            <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                              <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none">
+                                {pixCode}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(pixCode);
+                                  setPixCodeCopied(true);
+                                  setTimeout(() => setPixCodeCopied(false), 2000);
+                                }}
+                                className="bg-red-650 text-white hover:bg-red-700 bg-red-600 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors shadow-sm"
+                              >
+                                {pixCodeCopied ? 'Copiado!' : 'Copiar Código'}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -809,7 +1104,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
               onClick={handleSubmit}
               className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-xs font-extrabold px-7 py-2.5 rounded-full shadow-md transition-all cursor-pointer transform hover:scale-[1.02]"
             >
-              {isPremium ? 'Ir para Pagamento (R$ 29,90)' : 'Finalizar & Publicar Anúncio'}
+              {isPremium ? `Ir para Pagamento (R$ ${premiumPlan === 'platinum' ? '49,90' : '29,90'})` : 'Finalizar & Publicar Anúncio'}
             </button>
           ) : (
             <button
@@ -818,9 +1113,9 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
               className="bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs font-extrabold px-7 py-2.5 rounded-full shadow-md transition-all cursor-pointer transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {paymentStatus === 'idle'
-                ? `Pagar e Ativar Anúncio Premium Automaticamente`
+                ? `Confirmar Pagamento e Ativar Anúncio`
                 : paymentStatus === 'processing'
-                ? 'Confirmando Pagamento...'
+                ? 'Confirmando Transação...'
                 : 'Confirmado com Sucesso!'}
             </button>
           )}
@@ -829,3 +1124,64 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
     </div>
   );
 }
+
+// CRC16 CCITT (0x1021) calculation for PIX Standards
+function calculateCRC16(str: string): string {
+  let crc = 0xFFFF;
+  const polynomial = 0x1021;
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    for (let b = 0; b < 8; b++) {
+      const bit = ((code >> (7 - b)) & 1) === 1;
+      const c15 = ((crc >> 15) & 1) === 1;
+      crc <<= 1;
+      if (c15 !== bit) {
+        crc ^= polynomial;
+      }
+    }
+  }
+  crc &= 0xFFFF;
+  return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+
+export function generateStaticPix(key: string, amount: number, name: string = 'RAIMUNDO MOREIRA', city: string = 'SAO PAULO'): string {
+  const amountStr = amount.toFixed(2);
+  
+  // Tag 26: Merchant Account Information
+  const gui = "0014br.gov.bcb.pix";
+  const keyLength = key.length.toString().padStart(2, '0');
+  const keyTag = "01" + keyLength + key;
+  const tag26Val = gui + keyTag;
+  const tag26Length = tag26Val.length.toString().padStart(2, '0');
+  const tag26 = "26" + tag26Length + tag26Val;
+  
+  // Tag 59: Merchant Name
+  const formattedName = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().substring(0, 25);
+  const nameLength = formattedName.length.toString().padStart(2, '0');
+  const tag59 = "59" + nameLength + formattedName;
+  
+  // Tag 60: Merchant City
+  const formattedCity = city.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().substring(0, 15);
+  const cityLength = formattedCity.length.toString().padStart(2, '0');
+  const tag60 = "60" + cityLength + formattedCity;
+  
+  // Tag 54: Amount
+  const amountLength = amountStr.length.toString().padStart(2, '0');
+  const tag54 = "54" + amountLength + amountStr;
+  
+  const payloadWithoutCRC = 
+    "000201" +               // Payload Format Indicator
+    "010212" +               // Point of Initiation Method (12 = Multi-use / Static)
+    tag26 +                  // Merchant Account Info
+    "52040000" +             // Merchant Category Code (0000 = Generic/Not specific)
+    "5303986" +              // Transaction Currency BRL (986)
+    tag54 +                  // Transaction Amount
+    "5802BR" +               // Country Code
+    tag59 +                  // Name
+    tag60 +                  // City
+    "62070503***" +          // Additional Data Field Template
+    "6304";                  // CRC16 tag header
+    
+  return payloadWithoutCRC + calculateCRC16(payloadWithoutCRC);
+}
+

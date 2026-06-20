@@ -2,29 +2,139 @@ import { Category, Region, Listing } from '../types';
 
 export const BRAZIL_REGIONS: Region[] = [
   {
-    id: 'SP',
-    name: 'São Paulo',
-    cities: ['São Paulo', 'Campinas', 'São Bernardo do Campo', 'Santos', 'Ribeirão Preto', 'São José dos Campos']
+    id: 'AC',
+    name: 'Acre (AC)',
+    cities: ['Rio Branco', 'Cruzeiro do Sul', 'Sena Madureira', 'Tarauacá', 'Feijó']
   },
   {
-    id: 'RJ',
-    name: 'Rio de Janeiro',
-    cities: ['Rio de Janeiro', 'Niterói', 'Duque de Caxias', 'Angra dos Reis', 'Petrópolis', 'Cabo Frio']
+    id: 'AL',
+    name: 'Alagoas (AL)',
+    cities: ['Maceió', 'Arapiraca', 'Palmeira dos Índios', 'Rio Largo', 'Penedo', 'Maragogi']
   },
   {
-    id: 'MG',
-    name: 'Minas Gerais',
-    cities: ['Belo Horizonte', 'Uberlândia', 'Ouro Preto', 'Juiz de Fora', 'Contagem', 'Ipatinga']
+    id: 'AP',
+    name: 'Amapá (AP)',
+    cities: ['Macapá', 'Santana', 'Laranjal do Jari', 'Oiapoque', 'Porto Grande']
   },
   {
-    id: 'PR',
-    name: 'Paraná',
-    cities: ['Curitiba', 'Londrina', 'Maringá', 'Foz do Iguaçu', 'Ponta Grossa']
+    id: 'AM',
+    name: 'Amazonas (AM)',
+    cities: ['Manaus', 'Parintins', 'Itacoatiara', 'Manacapuru', 'Tefé', 'Coari']
   },
   {
     id: 'BA',
-    name: 'Bahia',
-    cities: ['Salvador', 'Porto Seguro', 'Feira de Santana', 'Ilhéus', 'Vitória da Conquista']
+    name: 'Bahia (BA)',
+    cities: ['Salvador', 'Feira de Santana', 'Vitória da Conquista', 'Camaçari', 'Itabuna', 'Porto Seguro', 'Ilhéus', 'Juazeiro', 'Barreiras']
+  },
+  {
+    id: 'CE',
+    name: 'Ceará (CE)',
+    cities: ['Fortaleza', 'Caucaia', 'Juazeiro do Norte', 'Maracanaú', 'Sobral', 'Crato', 'Jijoca de Jericoacoara']
+  },
+  {
+    id: 'DF',
+    name: 'Distrito Federal (DF)',
+    cities: ['Brasília', 'Taguatinga', 'Ceilândia', 'Samambaia', 'Águas Claras', 'Sobradinho']
+  },
+  {
+    id: 'ES',
+    name: 'Espírito Santo (ES)',
+    cities: ['Vitória', 'Vila Velha', 'Serra', 'Cariacica', 'Cachoeiro de Itapemirim', 'Linhares', 'Guarapari']
+  },
+  {
+    id: 'GO',
+    name: 'Goiás (GO)',
+    cities: ['Goiânia', 'Aparecida de Goiânia', 'Anápolis', 'Rio Verde', 'Luziânia', 'Águas Lindas de Goiás', 'Caldas Novas']
+  },
+  {
+    id: 'MA',
+    name: 'Maranhão (MA)',
+    cities: ['São Luís', 'Imperatriz', 'São José de Ribamar', 'Timon', 'Caxias', 'Codó', 'Barreirinhas']
+  },
+  {
+    id: 'MT',
+    name: 'Mato Grosso (MT)',
+    cities: ['Cuiabá', 'Várzea Grande', 'Rondonópolis', 'Sinop', 'Sorriso', 'Tangará da Serra', 'Primavera do Leste']
+  },
+  {
+    id: 'MS',
+    name: 'Mato Grosso do Sul (MS)',
+    cities: ['Campo Grande', 'Dourados', 'Três Lagoas', 'Corumbá', 'Ponta Porã', 'Bonito']
+  },
+  {
+    id: 'MG',
+    name: 'Minas Gerais (MG)',
+    cities: ['Belo Horizonte', 'Uberlândia', 'Contagem', 'Juiz de Fora', 'Betim', 'Montes Claros', 'Ribeirão das Neves', 'Uberaba', 'Ipatinga', 'Ouro Preto']
+  },
+  {
+    id: 'PA',
+    name: 'Pará (PA)',
+    cities: ['Belém', 'Ananindeua', 'Santarém', 'Marabá', 'Parauapebas', 'Castanhal', 'Altamira']
+  },
+  {
+    id: 'PB',
+    name: 'Paraíba (PB)',
+    cities: ['João Pessoa', 'Campina Grande', 'Santa Rita', 'Patos', 'Bayeux', 'Cabedelo']
+  },
+  {
+    id: 'PR',
+    name: 'Paraná (PR)',
+    cities: ['Curitiba', 'Londrina', 'Maringá', 'Ponta Grossa', 'Cascavel', 'São José dos Pinhais', 'Foz do Iguaçu', 'Guarapuava']
+  },
+  {
+    id: 'PE',
+    name: 'Pernambuco (PE)',
+    cities: ['Recife', 'Jaboatão dos Guararapes', 'Olinda', 'Caruaru', 'Petrolina', 'Paulista', 'Cabo de Santo Agostinho', 'Porto de Galinhas']
+  },
+  {
+    id: 'PI',
+    name: 'Piauí (PI)',
+    cities: ['Teresina', 'Parnaíba', 'Picos', 'Floriano', 'Piripiri']
+  },
+  {
+    id: 'RJ',
+    name: 'Rio de Janeiro (RJ)',
+    cities: ['Rio de Janeiro', 'Niterói', 'Duque de Caxias', 'Nova Iguaçu', 'São Gonçalo', 'Belford Roxo', 'Campos dos Goytacazes', 'Petrópolis', 'Cabo Frio', 'Angra dos Reis']
+  },
+  {
+    id: 'RN',
+    name: 'Rio Grande do Norte (RN)',
+    cities: ['Natal', 'Mossoró', 'Parnamirim', 'São Gonçalo do Amarante', 'Macaíba', 'Caicó', 'Tibau do Sul']
+  },
+  {
+    id: 'RS',
+    name: 'Rio Grande do Sul (RS)',
+    cities: ['Porto Alegre', 'Caxias do Sul', 'Canoas', 'Pelotas', 'Santa Maria', 'Gravataí', 'Viamão', 'Novo Hamburgo', 'Gramado', 'Canela']
+  },
+  {
+    id: 'RO',
+    name: 'Rondônia (RO)',
+    cities: ['Porto Velho', 'Ji-Paraná', 'Ariquemes', 'Cacoal', 'Vilhena']
+  },
+  {
+    id: 'RR',
+    name: 'Roraima (RR)',
+    cities: ['Boa Vista', 'Rorainópolis', 'Caracaraí', 'Mucajaí']
+  },
+  {
+    id: 'SC',
+    name: 'Santa Catarina (SC)',
+    cities: ['Joinville', 'Florianópolis', 'Blumenau', 'São José', 'Chapecó', 'Itajaí', 'Criciúma', 'Balneário Camboriú']
+  },
+  {
+    id: 'SP',
+    name: 'São Paulo (SP)',
+    cities: ['São Paulo', 'Campinas', 'Guarulhos', 'São Bernardo do Campo', 'Santo André', 'São José dos Campos', 'Ribeirão Preto', 'Sorocaba', 'Santos', 'São José do Rio Preto']
+  },
+  {
+    id: 'SE',
+    name: 'Sergipe (SE)',
+    cities: ['Aracaju', 'Nossa Senhora do Socorro', 'Lagarto', 'Itabaiana', 'Estância']
+  },
+  {
+    id: 'TO',
+    name: 'Tocantins (TO)',
+    cities: ['Palmas', 'Araguaína', 'Gurupi', 'Porto Nacional', 'Paraíso do Tocantins']
   }
 ];
 
