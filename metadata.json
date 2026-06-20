@@ -1,0 +1,9 @@
+{
+  "name": "Vivalocal Classificados",
+  "description": "Portal de classificados locais para compra e venda, empregos, imóveis, serviços e veículos com busca avançada por região.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
