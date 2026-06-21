@@ -67,6 +67,8 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
   const [imageUrl, setImageUrl] = useState('');
   const [imageSource, setImageSource] = useState<'stock' | 'url' | 'upload'>('stock');
   const [isDragging, setIsDragging] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [listingImages, setListingImages] = useState<string[]>([]);
   
   const [sellerName, setSellerName] = useState('');
   const [sellerPhone, setSellerPhone] = useState('');
@@ -208,10 +210,6 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 
   const handleSimulatePayment = () => {
     setErrorMessage('');
-    if (paymentMethod === 'card' && !cardHolder.trim()) {
-      setErrorMessage('Por favor, insira o nome completo do titular do cartão.');
-      return;
-    }
     
     setPaymentStatus('processing');
     
@@ -227,11 +225,15 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
           region,
           city,
           neighborhood: neighborhood.trim(),
-          imageUrl,
+          imageUrl: listingImages[0] || imageUrl,
+          images: listingImages.length > 0 ? listingImages : [imageUrl],
+          youtubeUrl,
           sellerName,
           sellerPhone,
           sellerEmail,
           isPremium: true,
+          premiumPlan: premiumPlan === 'platinum' ? 'vip' : 'highlight-30',
+          isApproved: true,
         });
       }, 1500);
     }, 1800);
@@ -259,11 +261,15 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
       region,
       city,
       neighborhood: neighborhood.trim(),
-      imageUrl,
+      imageUrl: listingImages[0] || imageUrl,
+      images: listingImages.length > 0 ? listingImages : [imageUrl],
+      youtubeUrl,
       sellerName,
       sellerPhone,
       sellerEmail,
       isPremium,
+      premiumPlan: isPremium ? (premiumPlan === 'platinum' ? 'vip' : 'highlight-30') : 'none',
+      isApproved: true,
     });
   };
 
@@ -523,6 +529,23 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                   Forneça informações completas para evitar perguntas repetitivas. Mínimo 20 caracteres. (Atual: {description.length})
                 </span>
               </div>
+
+              {/* YouTube Video URL Input matching item 14 */}
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Link de Vídeo do YouTube (Opcional)
+                </label>
+                <input
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="Ex: https://www.youtube.com/watch?v=..."
+                  className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-slate-850 outline-none focus:border-red-500 transition-all"
+                />
+                <span className="text-[9px] text-gray-400 font-semibold block leading-relaxed animate-pulse">
+                  Insira o link de um vídeo do YouTube sobre o seu item para enriquecer o anúncio e ganhar relevância!
+                </span>
+              </div>
             </div>
           )}
 
@@ -658,7 +681,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 
                         {imageUrl.startsWith('data:image') ? (
                           <div className="flex flex-col items-center gap-3">
-                            <div className="relative rounded-xl overflow-hidden max-h-[125px] w-[140px] h-[95px] shadow border border-gray-100 bg-gray-50 flex items-center justify-center">
+                            <div className="relative rounded-xl overflow-hidden max-h-[125px] w-[140px] h-[95px] shadow border border-gray-150 bg-gray-50 flex items-center justify-center">
                               <img src={imageUrl} alt="Upload preview" className="w-full h-full object-cover" />
                               <div className="absolute top-1 right-1 bg-emerald-600 text-white rounded-full p-0.5">
                                 <Check className="h-2.5 w-2.5" />
@@ -683,6 +706,48 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                       </div>
                     </div>
                   )}
+
+                  {/* Multiple image gallery checklist matching "Permitir que os usuários enviem até 10 fotos por anúncio" */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4.5 space-y-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-gray-205 pb-2">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
+                        <ImageIcon className="h-4.5 w-4.5 text-red-600" />
+                        Fotos do Seu Anúncio ({listingImages.length}/10)
+                      </span>
+                      {imageUrl && listingImages.length < 10 && !listingImages.includes(imageUrl) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setListingImages(prev => [...prev, imageUrl]);
+                          }}
+                          className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase px-2.5 py-1.5 rounded-lg cursor-pointer transition shadow-sm"
+                        >
+                          Anexar Foto Selecionada ao Anúncio
+                        </button>
+                      )}
+                    </div>
+
+                    {listingImages.length === 0 ? (
+                      <p className="text-[10px] bg-slate-100 p-2.5 rounded-xl text-gray-500 font-semibold leading-relaxed">
+                        Selecione as fotos usando o Banco de Fotos, links ou do seu dispositivo acima e clique no botão <strong className="text-red-700 font-bold">"Anexar Foto Selecionada"</strong> para adicionar até 10 fotos. Elas aparecerão juntas em um carrossel na página do anúncio!
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                        {listingImages.map((img, idx) => (
+                          <div key={idx} className="relative h-11 w-11 rounded-lg overflow-hidden border bg-white shadow-sm shrink-0 group">
+                            <img src={img} alt="" className="h-full w-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => setListingImages(prev => prev.filter((_, i) => i !== idx))}
+                              className="absolute inset-0 bg-red-600/90 text-white text-[8px] font-black uppercase transition-all duration-150 cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
+                            >
+                              Remover
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -891,161 +956,82 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 
               {paymentStatus === 'idle' ? (
                 <div className="border border-gray-150 rounded-2xl overflow-hidden shadow-sm bg-white">
-                  {/* Selector tabs */}
-                  <div className="grid grid-cols-2 bg-slate-50 border-b border-gray-100 text-xs font-bold text-gray-500 select-none">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('pix')}
-                      className={`py-3.5 flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
-                        paymentMethod === 'pix'
-                          ? 'border-red-600 text-slate-800 bg-white shadow-sm'
-                          : 'border-transparent hover:text-slate-850 hover:bg-white/50'
-                      }`}
-                    >
-                      <QrCode className="h-4.5 w-4.5 text-red-600" />
-                      Pagar via PIX (Automático)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('card')}
-                      className={`py-3.5 flex items-center justify-center gap-2 border-b-2 transition-all cursor-pointer ${
-                        paymentMethod === 'card'
-                          ? 'border-red-600 text-slate-800 bg-white shadow-sm'
-                          : 'border-transparent hover:text-slate-850 hover:bg-white/50'
-                      }`}
-                    >
-                      <CreditCard className="h-4.5 w-4.5 text-red-600" />
-                      Cartão de Crédito
-                    </button>
+                  <div className="bg-slate-50 border-b border-gray-100 p-4 font-bold text-xs text-slate-800 flex items-center gap-2">
+                    <QrCode className="h-5 w-5 text-red-600 animate-pulse" />
+                    Pagar via PIX Seguro (Compensação Automática)
                   </div>
 
                   <div className="p-5 sm:p-6 font-sans">
-                    {paymentMethod === 'pix' ? (
-                      <div className="flex flex-col sm:flex-row items-center gap-6">
-                        {/* Dynamic Generated QR Code */}
-                        <div className="bg-slate-50 border border-gray-150 p-3 rounded-2xl flex flex-col items-center shrink-0 w-[180px] shadow-sm select-none">
-                          <div className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-center">
-                            <img
-                              src={qrCodeUrl}
-                              alt="QRCode PIX vivalocal dinâmico"
-                              className="h-[140px] w-[140px] object-contain"
-                            />
-                          </div>
-                          <span className="text-[10px] text-slate-800 font-extrabold mt-2.5 uppercase tracking-wider flex items-center gap-1">
-                            <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-                            QR Code Dinâmico
-                          </span>
-                          <span className="text-[8px] text-gray-500 font-bold mt-0.5 tracking-wider">
-                            R$ {pixAmount.toFixed(2).replace('.', ',')}
-                          </span>
-                        </div>
-
-                        <div className="flex-1 space-y-4 w-full text-left">
-                          <div>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Instruções de Pix</span>
-                            <p className="text-xs font-semibold text-slate-700 leading-relaxed mt-0.5">
-                              Abra seu aplicativo do banco, escolha pagar com <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">Pix Copa e Cola</strong> ou <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">QR Code</strong> e use a chave ou o código abaixo de <strong className="text-emerald-700 font-black">R$ {pixAmount.toFixed(2).replace('.', ',')}</strong>.
-                            </p>
-                          </div>
-
-                          {/* Option 1: Chave Pix (E-mail) */}
-                          <div className="space-y-1">
-                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">1. Chave Pix E-mail habitual</span>
-                            <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                              <span className="text-xs font-semibold text-slate-850 truncate select-all flex-1 font-mono">
-                                raimundomoreira1988@gmail.com
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
-                                  setPixKeyCopied(true);
-                                  setTimeout(() => setPixKeyCopied(false), 2000);
-                                }}
-                                className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
-                              >
-                                {pixKeyCopied ? 'Copiado!' : 'Copiar E-mail'}
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* Option 2: Pix Copia e Cola Payload String */}
-                          <div className="space-y-1">
-                            <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">2. Código Pix Copia e Cola (Automático)</span>
-                            <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                              <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none">
-                                {pixCode}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(pixCode);
-                                  setPixCodeCopied(true);
-                                  setTimeout(() => setPixCodeCopied(false), 2000);
-                                }}
-                                className="bg-red-650 text-white hover:bg-red-700 bg-red-600 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors shadow-sm"
-                              >
-                                {pixCodeCopied ? 'Copiado!' : 'Copiar Código'}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Nome do Titular (conforme cartão)</label>
-                          <input
-                            type="text"
-                            required
-                            value={cardHolder}
-                            onChange={(e) => setCardHolder(e.target.value.toUpperCase())}
-                            placeholder="JOÃO M S SILVA"
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-red-500"
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      {/* Dynamic Generated QR Code */}
+                      <div className="bg-slate-50 border border-gray-150 p-3 rounded-2xl flex flex-col items-center shrink-0 w-[180px] shadow-sm select-none">
+                        <div className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-center">
+                          <img
+                            src={qrCodeUrl}
+                            alt="QRCode PIX vivalocal dinâmico"
+                            className="h-[140px] w-[140px] object-contain"
                           />
                         </div>
+                        <span className="text-[10px] text-slate-800 font-extrabold mt-2.5 uppercase tracking-wider flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping"></span>
+                          QR Code Dinâmico
+                        </span>
+                        <span className="text-[8px] text-gray-500 font-bold mt-0.5 tracking-wider">
+                          R$ {pixAmount.toFixed(2).replace('.', ',')}
+                        </span>
+                      </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div className="sm:col-span-2">
-                            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Número do Cartão</label>
-                            <input
-                              type="text"
-                              required
-                              value={cardNumber}
-                              onChange={(e) => setCardNumber(e.target.value)}
-                              placeholder="4532 7182 9301 2475"
-                              className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-red-500"
-                            />
+                      <div className="flex-1 space-y-4 w-full text-left">
+                        <div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Instruções de Pix</span>
+                          <p className="text-xs font-semibold text-slate-700 leading-relaxed mt-0.5">
+                            Abra seu aplicativo do banco, escolha pagar com <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">Pix Copia e Cola</strong> ou <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">QR Code</strong> e use a chave ou o código abaixo de <strong className="text-emerald-700 font-black">R$ {pixAmount.toFixed(2).replace('.', ',')}</strong>.
+                          </p>
+                        </div>
+
+                        {/* Option 1: Chave Pix (E-mail) */}
+                        <div className="space-y-1">
+                          <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">1. Chave Pix E-mail habitual</span>
+                          <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-850 truncate select-all flex-1 font-mono">
+                              raimundomoreira1988@gmail.com
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
+                                setPixKeyCopied(true);
+                                setTimeout(() => setPixKeyCopied(false), 2000);
+                              }}
+                              className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
+                            >
+                              {pixKeyCopied ? 'Copiado!' : 'Copiar E-mail'}
+                            </button>
                           </div>
+                        </div>
 
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Validade</label>
-                              <input
-                                type="text"
-                                required
-                                value={cardExpiry}
-                                onChange={(e) => setCardExpiry(e.target.value)}
-                                placeholder="MM/AA"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs font-bold text-center text-slate-800 outline-none focus:bg-white"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">CVV</label>
-                              <input
-                                type="password"
-                                required
-                                maxLength={4}
-                                value={cardCvv}
-                                onChange={(e) => setCardCvv(e.target.value)}
-                                placeholder="123"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs font-bold text-center text-slate-800 outline-none focus:bg-white"
-                              />
-                            </div>
+                        {/* Option 2: Pix Copia e Cola Payload String */}
+                        <div className="space-y-1">
+                          <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">2. Código Pix Copia e Cola (Automático)</span>
+                          <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none">
+                              {pixCode}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(pixCode);
+                                setPixCodeCopied(true);
+                                setTimeout(() => setPixCodeCopied(false), 2000);
+                              }}
+                              className="bg-red-650 text-white hover:bg-red-700 bg-red-600 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors shadow-sm"
+                            >
+                              {pixCodeCopied ? 'Copiado!' : 'Copiar Código'}
+                            </button>
                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ) : paymentStatus === 'processing' ? (
