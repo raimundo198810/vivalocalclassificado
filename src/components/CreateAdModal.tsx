@@ -109,7 +109,8 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
         amount: premiumPlan === 'platinum' ? 49.90 : 29.90,
         email: sellerEmail || 'raimundomoreira1988@gmail.com',
         description: `vivaLocal - ${premiumPlan === 'platinum' ? 'Destaque Platinum Max' : 'Destaque Ouro'}`,
-        listingId: `temp_ad_${Date.now()}`
+        listingId: `temp_ad_${Date.now()}`,
+        callbackUrl: window.location.origin + '/api/payments/webhook'
       };
 
       fetch('/api/payments/create-pix', {

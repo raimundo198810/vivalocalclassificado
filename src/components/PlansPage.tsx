@@ -113,7 +113,8 @@ export default function PlansPage({
         amount: pixAmount,
         email: 'raimundomoreira1988@gmail.com',
         description: `vivaLocal - Upgrade ${currentPlanDetails?.name || 'Destaque Premium'}`,
-        listingId: adToUpgrade || 'monthly_plan'
+        listingId: adToUpgrade || 'monthly_plan',
+        callbackUrl: window.location.origin + '/api/payments/webhook'
       };
 
       fetch('/api/payments/create-pix', {
