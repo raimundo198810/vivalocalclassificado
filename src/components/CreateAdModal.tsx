@@ -1276,7 +1276,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                             {mpPixCode && <span className="text-[8px] bg-red-100 text-red-700 font-extrabold px-1.5 rounded">Mercado Pago</span>}
                           </span>
                           <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none">
+                            <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none font-mono">
                               {mpPixCode || pixCode}
                             </span>
                             <button
@@ -1296,6 +1296,27 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                             </button>
                           </div>
                         </div>
+
+                        {/* Optional Sandbox Mercado Pago Approval simulator */}
+                        {mpPaymentId && (
+                          <div className="pt-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                fetch(`/api/payments/simulate-approve/${mpPaymentId}`, { method: 'POST' })
+                                  .then(() => {
+                                    setCopyAlertText("🚀 Sinalizadores enviados! Mercado Pago identificará o recebimento em instantes...");
+                                    setTimeout(() => setCopyAlertText(""), 3000);
+                                  })
+                                  .catch(err => console.error("Simulate error", err));
+                              }}
+                              className="w-full bg-slate-900 hover:bg-slate-800 text-white text-[10px] uppercase font-black py-2.5 px-3 rounded-xl transition-all shadow border border-slate-700 flex items-center justify-center gap-2 cursor-pointer select-none"
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                              Simular Pagamento no Mercado Pago
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

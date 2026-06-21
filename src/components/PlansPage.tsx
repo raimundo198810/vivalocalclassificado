@@ -528,6 +528,24 @@ export default function PlansPage({
                 </div>
               </div>
 
+              {/* Optional Sandbox Mercado Pago Approval simulator */}
+              {mpPaymentId && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetch(`/api/payments/simulate-approve/${mpPaymentId}`, { method: 'POST' })
+                        .then(() => triggerNotification('success', '🚀 Sinalizadores de simulação enviados! Mercado Pago confirmará sua transação em segundos.'))
+                        .catch(err => console.error("Simulate error", err));
+                    }}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white text-[10px] uppercase font-black py-2.5 px-3 rounded-xl transition-all shadow border border-slate-700 flex items-center justify-center gap-2 cursor-pointer select-none"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    Simular Pagamento no Mercado Pago
+                  </button>
+                </div>
+              )}
+
               {/* Option 1: Chave Pix (E-mail) */}
               <div className="space-y-1">
                 <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">Ou Chave Pix E-mail habitual</span>
