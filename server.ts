@@ -44,6 +44,7 @@ async function startServer() {
   // Credentials
   const PUBLIC_KEY = process.env.MERCADO_PAGO_PUBLIC_KEY || "APP_USR-59e29bee-606e-4ad0-bf3e-5c20cb319864";
   const ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN || "APP_USR-3720899526137368-062104-ebb277be21c716e8f7f6abcc9fd43b97-3486812023";
+  const WEBHOOK_SECRET = process.env.MERCADO_PAGO_WEBHOOK_SECRET || "bed538cfb4d73823261b55cd2175f4f72fc1c5c985a75bc7d494fd36f3cc4978";
 
   // Enpoint: Get active Public Credentials safely
   app.get("/api/payments/config", (req, res) => {
@@ -203,16 +204,72 @@ async function startServer() {
   // Endpoint: Mercado Pago Webhook Ingress
   app.post("/api/payments/webhook", async (req, res) => {
     try {
-      // Mercado Pago sends notifications on payment actions
       const body = req.body;
-      console.log("Mercado Pago Webhook payload received:", JSON.stringify(body));
+      console.log("-----------------------------------------");
+      console.log("Mercado Pago Webhook Received");
+      console.log("Headers:", JSON.stringify(req.headers));
+      console.log("Query parameters:", JSON.stringify(req.query));
+      console.log("Payload body:", JSON.stringify(body));
 
-      // Notification may come with 'type': 'payment' and action 'payment.created' / 'payment.updated'
+      const signatureHeader = req.headers["x-signature"] as string || "";
+      const requestId = req.headers["x-request-id"] as string || "";
+      
+      // Resource ID can come from 'data.id' query parameter, or 'id' query parameter,
+      // or from body (body.data?.id), or resource path (such as /v1/payments/ID)
+      const dataId = (req.query["data.id"] || req.query["id"] || body.data?.id || "") as string;
+
+      // 1. Signature Verification Check
+      if (signatureHeader && requestId && dataId) {
+        console.log(`[WEBHOOK VALIDATION] Authenticating webhook via Mercado Pago Signature Verification...`);
+        console.log(`[WEBHOOK VALIDATION] Signature: ${signatureHeader}`);
+        console.log(`[WEBHOOK VALIDATION] Request ID: ${requestId}`);
+        console.log(`[WEBHOOK VALIDATION] Resource ID: ${dataId}`);
+
+        // Parse signature elements (ts=TIMESTAMP, v1=HASH)
+        const parts = signatureHeader.split(",");
+        let ts = "";
+        let receivedHash = "";
+        for (const part of parts) {
+          const [key, val] = part.trim().split("=");
+          if (key === "ts") ts = val;
+          if (key === "v1") receivedHash = val;
+        }
+
+        if (ts && receivedHash) {
+          // Construct signature validation text as per Mercado Pago Specification:
+          // Format: id:[RESOURCE_ID];request-id:[REQUEST_ID];ts:[TIMESTAMP];
+          const stringToSign = `id:${dataId};request-id:${requestId};ts:${ts};`;
+          console.log(`[WEBHOOK VALIDATION] Constructing signature string: "${stringToSign}"`);
+
+          const crypto = await import("crypto");
+          // Generate computed signature using SHA-256 with HMAC using WEBHOOK_SECRET key
+          const computedHash = crypto
+            .createHmac("sha256", WEBHOOK_SECRET)
+            .update(stringToSign)
+            .digest("hex");
+
+          if (computedHash === receivedHash) {
+            console.log("[WEBHOOK VALIDATION] ✅ SUCCESS: Webhook notification verification passed! Authenticated with Mercado Pago.");
+          } else {
+            console.warn("[WEBHOOK VALIDATION] ❌ ERROR: Signature verification failed!");
+            console.warn(`Computed: ${computedHash}`);
+            console.warn(`Received: ${receivedHash}`);
+            // Strictly reject spoofed / unauthenticated requests
+            return res.status(401).json({ error: "Unauthorized: Webhook signature verification failed" });
+          }
+        } else {
+          console.warn("[WEBHOOK VALIDATION] ⚠️ WARNING: Missing 'ts' or 'v1' properties inside x-signature header.");
+        }
+      } else {
+        console.log("[WEBHOOK VALIDATION] ℹ️ Optional credentials or signature headers missing. Proceeding with safe fallback processing.");
+      }
+
+      // 2. Core Notification Processing
       const type = body.type || body.action;
-      const paymentId = body.data?.id || (body.resource && body.resource.split("/").pop());
+      const paymentId = dataId || body.data?.id || (body.resource && body.resource.split("/").pop());
 
       if (paymentId && (type === "payment" || type?.includes("payment"))) {
-        console.log(`Querying Mercado Pago webhook transaction: id ${paymentId}`);
+        console.log(`[WEBHOOK PROCESSOR] Querying payment information to update status: paymentID ${paymentId}`);
         const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
           headers: {
             "Authorization": `Bearer ${ACCESS_TOKEN}`
@@ -221,18 +278,22 @@ async function startServer() {
 
         if (mpResponse.ok) {
           const paymentData = await mpResponse.json();
+          console.log(`[WEBHOOK PROCESSOR] Payment status fetched: ${paymentData.status}`);
           if (paymentData.status === "approved") {
-            console.log(`Webhook approved successfully match! Payment ID: ${paymentId}`);
+            console.log(`[WEBHOOK PROCESSOR] Payment ID ${paymentId} marked as APPROVED in webhook stream.`);
             approvedWebhookPayments.add(paymentId.toString());
           }
+        } else {
+          console.error(`[WEBHOOK PROCESSOR] Failed to query Mercado Pago payment details: ${mpResponse.statusText}`);
         }
       }
 
+      console.log("-----------------------------------------");
       // MP expects a 200/201 status code to stop re-sending the same webhook notification
       res.sendStatus(200);
-    } catch (e) {
-      console.error("Error handling webhook ingress:", e);
-      res.sendStatus(200); // Return 200 anyway so that Mercado Pago doesn't flood the webhook
+    } catch (e: any) {
+      console.error("[WEBHOOK PROCESSOR] Error handling webhook ingress:", e);
+      res.sendStatus(200); // Return 200 anyway so that Mercado Pago doesn't flood the webhook retry queue
     }
   });
 
