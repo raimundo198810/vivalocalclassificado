@@ -1169,123 +1169,96 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
               {premiumPlan === 'platinum' && customPaymentLink && (
                 <div className="bg-gradient-to-r from-red-50 to-amber-50 border border-amber-200 rounded-2xl p-4.5 space-y-3 shadow-sm">
                   <div className="flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-red-600 animate-pulse" />
-                    <span className="text-xs font-extrabold text-slate-800">Link de Pagamento Dedicado</span>
-                  </div>
-                  <p className="text-[10px] text-gray-600 font-semibold leading-relaxed">
+                    <Flame className="h-4 w-4 text-red-600 a                  <p className="text-[10px] text-gray-600 font-semibold leading-relaxed">
                     Você pode efetuar o pagamento diretamente acessando este link seguro de checkout:
                   </p>
                   <a
                     href={customPaymentLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex w-full items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs py-3 rounded-xl shadow transition-all hover:scale-[1.01]"
+                    className="inline-flex w-full items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-3 rounded-xl shadow transition-all hover:scale-[1.01]"
                   >
                     <span>Ir para o Link de Pagamento (R$ 49,90)</span>
-                    <span className="text-[10px] bg-red-800 text-white font-black px-1.5 py-0.5 rounded uppercase">Mercado Pago / etc</span>
+                    <span className="text-[10px] bg-emerald-800 text-white font-black px-1.5 py-0.5 rounded uppercase">PIX Direto</span>
                   </a>
                 </div>
               )}
 
               {paymentStatus === 'idle' ? (
                 <div className="space-y-4 bg-white rounded-2xl">
-                  {/* Automatic Payment Webhook Status Bar */}
-                  <div className={`p-4 border rounded-xl flex items-center justify-between gap-3 transition-colors ${
-                    webhookState === 'pending'
-                      ? 'bg-slate-50 border-slate-200 text-slate-700'
-                      : webhookState === 'detected'
-                      ? 'bg-amber-50 border-amber-300 text-amber-900'
-                      : 'bg-emerald-50 border-emerald-300 text-emerald-950 animate-pulse'
-                  }`}>
+                  {/* Custom Instant Release & Verification Status */}
+                  <div className="p-4 border rounded-xl flex items-center justify-between gap-3 bg-emerald-50 border-emerald-200 text-emerald-900">
                     <div className="flex items-center gap-3">
-                      {webhookState === 'pending' ? (
-                        <div className="h-2 w-2 rounded-full bg-blue-600 animate-ping shrink-0" />
-                      ) : webhookState === 'detected' ? (
-                        <Loader2 className="h-4.5 w-4.5 text-amber-600 animate-spin shrink-0 animate-duration-[1600ms]" />
-                      ) : (
-                        <Check className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
-                      )}
-                      <div className="text-left">
-                        <p className="text-xs font-black uppercase tracking-wider">
-                          {webhookState === 'pending' && '⏳ Aguardando Recebimento na Conta'}
-                          {webhookState === 'detected' && '⚡ PIX Detectado! Processando...'}
-                          {webhookState === 'confirmed' && '✅ Pagamento Confirmado!'}
+                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                      <div className="text-left font-sans">
+                        <p className="text-xs font-black uppercase tracking-wider text-emerald-910">
+                          ⚡ PIX Direto via Telefone/E-mail
                         </p>
-                        <p className="text-[10px] font-semibold text-gray-500 text-left">
-                          {webhookState === 'pending' && `Sincronizado automaticamente via API Webhook (Próxima checagem em ${webhookSeconds}s)`}
-                          {webhookState === 'detected' && 'Identificando dados de RAIMUNDO MOREIRA e liberando recursos...'}
-                          {webhookState === 'confirmed' && 'Pagamento aprovado na API gateway. Recursos premium aplicados!'}
+                        <p className="text-[10px] font-semibold text-emerald-700 leading-relaxed mt-0.5">
+                          Efetue a transferência de <strong>R$ {pixAmount.toFixed(2).replace('.', ',')}</strong> de forma prática. O plano do seu anúncio é liberado em minutos!
                         </p>
                       </div>
                     </div>
-                    {webhookState === 'pending' && (
-                      <span className="text-[9px] font-black bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full uppercase shrink-0">
-                        API Ativa
-                      </span>
-                    )}
+                    <span className="text-[9px] font-black bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full uppercase shrink-0">
+                      Chave Local
+                    </span>
                   </div>
 
                   <div className="border border-gray-150 rounded-2xl overflow-hidden shadow-sm bg-white">
                     <div className="bg-slate-50 border-b border-gray-100 p-4 font-bold text-xs text-slate-800 flex items-center gap-2">
                       <QrCode className="h-5 w-5 text-red-600 animate-pulse" />
-                      Pagar via PIX Seguro (Compensação Automática)
+                      Pagar via PIX Seguro (Compensação Direta)
                     </div>
 
                   <div className="p-5 sm:p-6 font-sans">
                     <div className="flex flex-col sm:flex-row items-center gap-6">
-                      {/* Dynamic Generated QR Code */}
+                      {/* Direct QR Code representing the custom email PIX Key */}
                       <div className="bg-slate-50 border border-gray-150 p-3 rounded-2xl flex flex-col items-center shrink-0 w-[180px] shadow-sm select-none relative overflow-hidden">
-                        {mpLoading && (
-                          <div className="absolute inset-0 bg-white/85 flex flex-col items-center justify-center z-10">
-                            <Loader2 className="h-5 w-5 text-red-650 animate-spin" />
-                            <span className="text-[8px] font-black uppercase text-red-700 tracking-wider mt-1">Gerando PIX...</span>
-                          </div>
-                        )}
                         <div className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-center">
                           <img
-                            src={mpQrBase64 ? `data:image/png;base64,${mpQrBase64}` : qrCodeUrl}
-                            alt="QRCode PIX vivalocal dinâmico"
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=atendimento@vivalocalclassificado.com.br`}
+                            alt="QRCode PIX vivaLocal"
                             className="h-[140px] w-[140px] object-contain"
                           />
                         </div>
                         <span className="text-[10px] text-slate-800 font-extrabold mt-2.5 uppercase tracking-wider flex items-center gap-1">
                           <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-                          {mpPixCode ? 'Mercado Pago Real' : 'QR Code Dinâmico'}
+                          E-mail Pix Celular
                         </span>
                         <span className="text-[8px] text-gray-500 font-bold mt-0.5 tracking-wider">
                           R$ {pixAmount.toFixed(2).replace('.', ',')}
                         </span>
                       </div>
 
-                      <div className="flex-1 space-y-4 w-full text-left">
+                      <div className="flex-1 space-y-4 w-full text-left font-sans">
                         <div>
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Instruções de Pix</span>
                           <p className="text-xs font-semibold text-slate-700 leading-relaxed mt-0.5">
-                            Abra seu aplicativo do banco, escolha pagar com <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">Pix Copia e Cola</strong> ou <strong className="text-red-700 bg-red-50 px-1 py-0.5 rounded">QR Code</strong> e use a chave ou o código abaixo de <strong className="text-emerald-700 font-black">R$ {pixAmount.toFixed(2).replace('.', ',')}</strong>.
+                            Abra seu aplicativo do banco, escolha pagar com <strong className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">Pix E-mail</strong> ou <strong className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">Copiar Chave</strong> abaixo de <strong className="text-slate-900 font-black">R$ {pixAmount.toFixed(2).replace('.', ',')}</strong>.
                           </p>
                         </div>
 
                         {/* Option 1: Chave Pix (E-mail) */}
                         <div className="space-y-1">
-                          <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">1. Chave Pix E-mail habitual</span>
-                          <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                            <span className="text-xs font-semibold text-slate-850 truncate select-all flex-1 font-mono">
-                              raimundomoreira1988@gmail.com
+                          <span className="block text-[9px] font-black text-slate-400 uppercase tracking-widest">Sua Chave Pix para Transferência (E-mail)</span>
+                          <div className="bg-slate-50 border border-emerald-150 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-inner">
+                            <span className="text-xs font-extrabold text-emerald-950 truncate select-all flex-1 font-mono">
+                              atendimento@vivalocalclassificado.com.br
                             </span>
                             <button
                               type="button"
                               onClick={() => {
-                                navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
+                                navigator.clipboard.writeText('atendimento@vivalocalclassificado.com.br');
                                 setPixKeyCopied(true);
-                                setCopyAlertText('Chave PIX copiada!');
+                                setCopyAlertText('Chave PIX copiada com sucesso!');
                                 setTimeout(() => {
                                   setPixKeyCopied(false);
                                   setCopyAlertText('');
                                 }, 2500);
                               }}
-                              className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
+                              className="bg-emerald-650 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer shadow-sm transition-all"
                             >
-                              {pixKeyCopied ? 'Copiado!' : 'Copiar Chave PIX'}
+                              {pixKeyCopied ? 'Copiado!' : 'Copiar Chave'}
                             </button>
                           </div>
                         </div>
@@ -1293,17 +1266,16 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                         {/* Option 2: Pix Copia e Cola Payload String */}
                         <div className="space-y-1">
                           <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
-                            2. Código Pix Copia e Cola
-                            {mpPixCode && <span className="text-[8px] bg-red-100 text-red-700 font-extrabold px-1.5 rounded">Mercado Pago</span>}
+                            Código Pix Copia e Cola para Apps Bancários
                           </span>
                           <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
-                            <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none font-mono">
-                              {mpPixCode || pixCode}
+                            <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all font-bold">
+                              atendimento@vivalocalclassificado.com.br
                             </span>
                             <button
                               type="button"
                               onClick={() => {
-                                navigator.clipboard.writeText(mpPixCode || pixCode);
+                                navigator.clipboard.writeText('atendimento@vivalocalclassificado.com.br');
                                 setPixCodeCopied(true);
                                 setCopyAlertText('Código Pix Copia e Cola copiado!');
                                 setTimeout(() => {
@@ -1311,31 +1283,22 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                                   setCopyAlertText('');
                                 }, 2500);
                               }}
-                              className="bg-red-650 text-white hover:bg-red-700 bg-red-600 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors shadow-sm"
+                              className="bg-slate-900 text-white hover:bg-slate-850 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors shadow-sm"
                             >
                               {pixCodeCopied ? 'Copiado!' : 'Copiar Código'}
                             </button>
                           </div>
                         </div>
 
-                        {/* Optional Sandbox Mercado Pago Approval simulator */}
-                        {mpPaymentId && (
-                          <div className="pt-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                fetch(`/api/payments/simulate-approve/${mpPaymentId}`, { method: 'POST' })
-                                  .then(() => {
-                                    setCopyAlertText("🚀 Sinalizadores enviados! Mercado Pago identificará o recebimento em instantes...");
-                                    setTimeout(() => setCopyAlertText(""), 3000);
-                                  })
-                                  .catch(err => console.error("Simulate error", err));
-                              }}
-                              className="w-full bg-slate-900 hover:bg-slate-800 text-white text-[10px] uppercase font-black py-2.5 px-3 rounded-xl transition-all shadow border border-slate-700 flex items-center justify-center gap-2 cursor-pointer select-none"
-                            >
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                              Simular Pagamento no Mercado Pago
-                            </button>
+                        {/* Sandbox Simulation indicator */}
+                        <div className="p-3 bg-blue-50 border border-blue-150 rounded-xl">
+                          <p className="text-[10px] text-blue-900 leading-relaxed font-semibold">
+                            📌 Após transferir nos canais oficiais, clique em <b>"Confirmar Pagamento do Anúncio"</b> abaixo para validar e ativar seu anúncio do vivaLocal de forma instantânea.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>                         </button>
                           </div>
                         )}
                       </div>
