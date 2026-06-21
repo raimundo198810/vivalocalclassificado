@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ShieldAlert, Check, X, Users, CreditCard, Tag, Image, Settings2, BarChart3, 
-  Trash2, AlertTriangle, ToggleLeft, ToggleRight, PlusCircle, Edit3, HelpCircle 
+  Trash2, AlertTriangle, ToggleLeft, ToggleRight, PlusCircle, Edit3, HelpCircle, Loader2
 } from 'lucide-react';
 import { Listing, User, Category, PaymentLog } from '../types';
 
@@ -19,6 +19,7 @@ interface AdminPanelProps {
   siteSettings: { siteName: string; supportPhone: string; footerCopy: string };
   onUpdateSiteSettings: (settings: { siteName: string; supportPhone: string; footerCopy: string }) => void;
   onDeleteUser: (userId: string) => void;
+  onTriggerWebhook?: () => void;
 }
 
 export default function AdminPanel({
@@ -35,8 +36,10 @@ export default function AdminPanel({
   siteSettings,
   onUpdateSiteSettings,
   onDeleteUser,
+  onTriggerWebhook,
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = useState<'listings' | 'users' | 'payments' | 'categories' | 'banners' | 'content' | 'reports'>('listings');
+  const [paymentSubTab, setPaymentSubTab] = useState<'all' | 'pending' | 'confirmed' | 'featured'>('all');
   
   // States for creations
   const [newSubCategoryName, setNewSubCategoryName] = useState('');
@@ -259,42 +262,236 @@ export default function AdminPanel({
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* 3. PAYMENTS MONITORING */}
+                  {/* 3. PAYMENTS MONITORING WITH COMPREHENSIVE PAINEL FINANCEIRO */}
           {activeTab === 'payments' && (
-            <div className="space-y-4">
-              <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider pb-2 border-b border-gray-100">
-                Faturamento Pix Comercial Registrado
-              </h3>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider pb-1 border-b border-gray-100 flex items-center gap-2" id="adm-finances-header">
+                  <CreditCard className="h-5 w-5 text-red-650" />
+                  Painel Financeiro & Auditoria Pix
+                </h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-1">
+                  Acompanhe em tempo real o fluxo de pagamentos Pix, faturamento consolidado e anúncios promovidos na plataforma vivaLocal.
+                </p>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-2">
-                <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl border border-emerald-100">
-                  <span className="text-[9px] font-black uppercase block text-emerald-600">Total Arrecadado</span>
-                  <span className="text-xl font-black">R$ {totalSalesAmount.toFixed(2).replace('.', ',')}</span>
+              {/* Webhook Service Simulation Box */}
+              {onTriggerWebhook && (
+                <div className="bg-slate-900 border border-slate-850 text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-xl select-none">
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-red-550">
+                      <span className="h-2 w-2 rounded-full bg-red-500 animate-ping"></span>
+                      Simulador de Webhook de Pagamento PIX
+                    </h4>
+                    <p className="text-[10px] text-slate-350 font-bold max-w-xl">
+                      Nosso gateway de API Pix envia avisos de liquidação via Webhook. Como administrador, você pode induzir uma verificação imediata para detectar transações pendentes de Pix no banco e atualizar os anúncios correspondentes instantaneamente.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onTriggerWebhook}
+                    className="shrink-0 bg-red-650 hover:bg-red-750 text-white text-[10px] font-black py-2.5 px-4 rounded-xl shadow-md uppercase tracking-wider transition-all hover:scale-[1.02] cursor-pointer"
+                  >
+                    🚀 Forçar Webhook (Pix)
+                  </button>
                 </div>
-                <div className="bg-blue-50 text-blue-850 p-4 rounded-xl border border-blue-100">
-                  <span className="text-[9px] font-black uppercase block text-blue-600">Total Transações Pix</span>
-                  <span className="text-xl font-black">{paymentLogs.length} compensadas</span>
+              )}
+
+              {/* Consolidated Metrics Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4" id="adm-finances-metrics-grid">
+                <div className="bg-emerald-50 border border-emerald-150 p-4 rounded-2xl">
+                  <span className="text-[9px] font-black uppercase text-emerald-700 block">Total Arrecadado</span>
+                  <p className="text-lg font-black text-emerald-950 mt-1">
+                    R$ {paymentLogs.filter(log => log.status === 'approved').reduce((acc, curr) => acc + curr.amount, 0).toFixed(2).replace('.', ',')}
+                  </p>
+                  <p className="text-[8px] font-bold text-emerald-600 mt-0.5 font-sans">Apenas compensações aprovadas</p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-150 p-4 rounded-2xl">
+                  <span className="text-[9px] font-black uppercase text-blue-700 block">Destaques Ativos</span>
+                  <p className="text-lg font-black text-blue-950 mt-1">
+                    {listings.filter(l => l.isPremium).length} anúncios
+                  </p>
+                  <p className="text-[8px] font-bold text-blue-600 mt-0.5">Recursos premium ativos no feed</p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-150 p-4 rounded-2xl animate-pulse">
+                  <span className="text-[9px] font-black uppercase text-amber-700 block">Pix Pendentes</span>
+                  <p className="text-lg font-black text-amber-950 mt-1">
+                    {paymentLogs.filter(log => log.status === 'pending').length} transações
+                  </p>
+                  <p className="text-[8px] font-bold text-amber-600 mt-0.5">Aguardando confirmação webhook</p>
+                </div>
+
+                <div className="bg-purple-50 border border-purple-150 p-4 rounded-2xl">
+                  <span className="text-[9px] font-black uppercase text-purple-700 block">Histórico Geral</span>
+                  <p className="text-lg font-black text-purple-950 mt-1">{paymentLogs.length} tentativas</p>
+                  <p className="text-[8px] font-bold text-purple-600 mt-0.5">Registros na base de dados</p>
                 </div>
               </div>
 
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {paymentLogs.map(log => (
-                  <div key={log.id} className="p-3 bg-slate-50 border border-gray-100 rounded-xl text-xs font-semibold flex items-center justify-between text-slate-800">
-                    <div>
-                      <span className="block font-bold">{log.plan}</span>
-                      <span className="text-[9px] text-gray-400 block mt-0.5">Email: {log.userEmail} • {new Date(log.createdAt).toLocaleString()}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-black text-slate-900 block">R$ {log.amount.toFixed(2).replace('.', ',')}</span>
-                      <span className="text-[8px] bg-emerald-100 text-emerald-850 font-black px-1.5 py-0.5 rounded uppercase mt-1 inline-block">Pago</span>
-                    </div>
-                  </div>
-                ))}
+              {/* Sub navigation Tabs for Payments Monitoring */}
+              <div className="flex border-b border-gray-100 gap-1 pb-px overflow-x-auto select-none sm:scrollbar-none" id="adm-finances-subtabs">
+                <button
+                  type="button"
+                  onClick={() => setPaymentSubTab('all')}
+                  className={`px-4 py-2 border-b-2 text-xs font-extrabold whitespace-nowrap transition-colors ${
+                    paymentSubTab === 'all'
+                      ? 'border-red-600 text-slate-900 font-black'
+                      : 'border-transparent text-gray-400 hover:text-slate-700'
+                  }`}
+                >
+                  Histórico de Transações ({paymentLogs.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSubTab('pending')}
+                  className={`px-4 py-2 border-b-2 text-xs font-extrabold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                    paymentSubTab === 'pending'
+                      ? 'border-red-600 text-slate-900 font-black'
+                      : 'border-transparent text-gray-400 hover:text-slate-700'
+                  }`}
+                >
+                  <span className="h-1.5 w-1.5 bg-amber-500 rounded-full animate-ping shrink-0"></span>
+                  Pagamentos Pendentes ({paymentLogs.filter(l => l.status === 'pending').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSubTab('confirmed')}
+                  className={`px-4 py-2 border-b-2 text-xs font-extrabold whitespace-nowrap transition-colors ${
+                    paymentSubTab === 'confirmed'
+                      ? 'border-red-600 text-slate-900 font-black'
+                      : 'border-transparent text-gray-400 hover:text-slate-700'
+                  }`}
+                >
+                  Pagamentos Confirmados ({paymentLogs.filter(l => l.status === 'approved').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentSubTab('featured')}
+                  className={`px-4 py-2 border-b-2 text-xs font-extrabold whitespace-nowrap transition-colors ${
+                    paymentSubTab === 'featured'
+                      ? 'border-red-600 text-slate-900 font-black'
+                      : 'border-transparent text-gray-400 hover:text-slate-700'
+                  }`}
+                >
+                  Anúncios Destacados ({listings.filter(l => l.isPremium).length})
+                </button>
+              </div>
+
+              {/* List displays based on sub-tab */}
+              <div className="space-y-2 max-h-[400px] overflow-y-auto" id="adm-finances-subtabs-listings">
+                {paymentSubTab === 'all' && (
+                  <>
+                    {paymentLogs.length === 0 ? (
+                      <p className="text-xs text-gray-400 font-semibold text-center py-8">Nenhum registro de transação encontrado.</p>
+                    ) : (
+                      paymentLogs.map(log => (
+                        <div key={log.id} className="p-3.5 bg-slate-50 border border-gray-150 rounded-xl text-xs font-semibold flex items-center justify-between text-slate-800 hover:bg-slate-100 transition-colors">
+                          <div className="space-y-1">
+                            <span className="font-extrabold text-slate-900 block">{log.plan}</span>
+                            <span className="text-[10px] text-gray-500 block">
+                              ID: <span className="font-mono text-[9px] text-gray-400">{log.id}</span> • Email: {log.userEmail}
+                            </span>
+                            <span className="text-[10px] text-gray-400 block">{new Date(log.createdAt).toLocaleString()}</span>
+                          </div>
+                          <div className="text-right space-y-1">
+                            <span className="font-black text-slate-900 block text-xs">R$ {log.amount.toFixed(2).replace('.', ',')}</span>
+                            <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase inline-block ${
+                              log.status === 'approved' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                            }`}>
+                              {log.status === 'approved' ? 'Confirmado / Pago' : 'Aguardando PIX'}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
+
+                {paymentSubTab === 'pending' && (
+                  <>
+                    {paymentLogs.filter(l => l.status === 'pending').length === 0 ? (
+                      <div className="text-center py-10 bg-slate-50 border border-dashed border-gray-200 rounded-2xl">
+                        <Check className="h-8 w-8 text-emerald-500 mx-auto mb-2 animate-bounce" />
+                        <h4 className="text-xs font-bold text-slate-800">Tudo em dia!</h4>
+                        <p className="text-[10px] text-gray-400 mt-1 max-w-xs mx-auto">Nenhum PIX pendente aguardando webhook neste momento.</p>
+                      </div>
+                    ) : (
+                      paymentLogs.filter(l => l.status === 'pending').map(log => (
+                        <div key={log.id} className="p-3.5 bg-amber-50/40 border border-amber-150 rounded-xl text-xs font-semibold flex items-center justify-between text-slate-800">
+                          <div>
+                            <span className="font-black text-amber-955">{log.plan}</span>
+                            <span className="text-[10px] text-slate-600 block mt-0.5">Email do comprador: {log.userEmail}</span>
+                            <span className="text-[9px] text-gray-400 block mt-1">Solicitado em: {new Date(log.createdAt).toLocaleString()}</span>
+                          </div>
+                          <div className="text-right space-y-1.5">
+                            <span className="font-black text-gray-900 block">R$ {log.amount.toFixed(2).replace('.', ',')}</span>
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <span className="text-[8px] bg-amber-100 text-amber-850 font-black px-1.5 py-0.5 rounded uppercase">Pendente</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
+
+                {paymentSubTab === 'confirmed' && (
+                  <>
+                    {paymentLogs.filter(l => l.status === 'approved').length === 0 ? (
+                      <p className="text-xs text-gray-400 font-semibold text-center py-8">Nenhum pagamento confirmado até agora.</p>
+                    ) : (
+                      paymentLogs.filter(l => l.status === 'approved').map(log => (
+                        <div key={log.id} className="p-3.5 bg-emerald-50/20 border border-emerald-100 rounded-xl text-xs font-semibold flex items-center justify-between text-slate-800">
+                          <div>
+                            <span className="font-black text-emerald-900">{log.plan}</span>
+                            <span className="text-[10px] text-slate-600 block mt-0.5">Email do usuário: {log.userEmail}</span>
+                            <span className="text-[9px] text-gray-400 block mt-1">Compensado em: {new Date(log.createdAt).toLocaleString()}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-black text-emerald-950 block">R$ {log.amount.toFixed(2).replace('.', ',')}</span>
+                            <span className="text-[8px] bg-emerald-100 text-emerald-850 font-black px-2 py-0.5 rounded uppercase mt-1.5 inline-block animate-pulse">Confirmado</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
+
+                {paymentSubTab === 'featured' && (
+                  <>
+                    {listings.filter(l => l.isPremium).length === 0 ? (
+                      <p className="text-xs text-gray-400 font-semibold text-center py-8">Não há anúncios marcados como Destaque atualmente.</p>
+                    ) : (
+                      listings.filter(l => l.isPremium).map(listing => (
+                        <div key={listing.id} className="p-3.5 bg-white border border-gray-150 rounded-xl text-xs font-semibold flex items-center gap-3 text-slate-800 hover:border-red-200 transition-colors">
+                          <img
+                            src={listing.imageUrl}
+                            alt={listing.title}
+                            className="h-10 w-10 object-cover rounded-lg shrink-0 border border-gray-100"
+                          />
+                          <div className="flex-1 truncate">
+                            <span className="font-black text-slate-900 block truncate">{listing.title}</span>
+                            <span className="text-[10px] text-gray-500 block truncate">Região: {listing.city} - {listing.region} • Anunciante: {listing.sellerName}</span>
+                            {listing.externalLink && (
+                              <span className="text-[9px] text-blue-600 font-bold block truncate mt-0.5">Website: {listing.externalLink}</span>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-[9px] font-black bg-red-100 text-red-750 px-2 py-0.5 rounded-full uppercase block text-center animate-bounce">
+                              {listing.premiumPlan === 'vip' ? '🔥 VIP Max' : '⭐ Ouro'}
+                            </span>
+                            <span className="text-[8px] text-gray-450 font-semibold block mt-1">{listing.views} visualizações</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </>
+                )}
               </div>
             </div>
+          )}          </div>
           )}
 
           {/* 4. CATEGORIES EXPANSION */}

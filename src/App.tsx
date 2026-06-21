@@ -11,7 +11,7 @@ import ListingCard from './components/ListingCard';
 import ListingDetail from './components/ListingDetail';
 import CreateAdModal from './components/CreateAdModal';
 import MyAdsDashboard from './components/MyAdsDashboard';
-import { Listing, SearchFilters, CategoryId, User as UserType } from './types';
+import { Listing, SearchFilters, CategoryId, User as UserType, PaymentLog } from './types';
 import { INITIAL_LISTINGS, CATEGORIES } from './data/seedData';
 import { Heart, Sparkles, AlertCircle, ShoppingBag, PlusCircle, CheckCircle } from 'lucide-react';
 // @ts-ignore
@@ -80,13 +80,13 @@ export default function App() {
     }
   });
 
-  const [paymentLogs, setPaymentLogs] = useState<any[]>(() => {
+  const [paymentLogs, setPaymentLogs] = useState<PaymentLog[]>(() => {
     try {
       const stored = localStorage.getItem('vivalocal_payments');
       if (stored) return JSON.parse(stored);
-      const initialPayments = [
-        { id: 'pay_1', userEmail: 'raimundo@vivalocal.com', plan: 'Destaque VIP 30 dias', amount: 49.90, createdAt: new Date().toISOString() },
-        { id: 'pay_2', userEmail: 'marcos@gmail.com', plan: 'Destaque Bronze 7 dias', amount: 19.90, createdAt: new Date().toISOString() }
+      const initialPayments: PaymentLog[] = [
+        { id: 'pay_1', userEmail: 'raimundo@vivalocal.com', plan: 'Destaque VIP 30 dias', amount: 49.90, method: 'pix', status: 'approved', createdAt: new Date().toISOString() },
+        { id: 'pay_2', userEmail: 'marcos@gmail.com', plan: 'Destaque Bronze 7 dias', amount: 19.90, method: 'pix', status: 'approved', createdAt: new Date().toISOString() }
       ];
       localStorage.setItem('vivalocal_payments', JSON.stringify(initialPayments));
       return initialPayments;
@@ -202,6 +202,67 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('vivalocal_users', JSON.stringify(users));
   }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('vivalocal_payments', JSON.stringify(paymentLogs));
+  }, [paymentLogs]);
+
+  // Webhook service function to simulate checking and confirming pending PIX payments
+  const simulateWebhookPaymentVerification = () => {
+    const pendingLogs = paymentLogs.filter(log => log.status === 'pending' && log.listingId);
+    if (pendingLogs.length === 0) return { checked: 0, updatedCount: 0 };
+
+    const updatedLogIds = pendingLogs.map(log => log.id);
+
+    // 1. Mark matching logs as approved (Pago)
+    setPaymentLogs(prev => prev.map(log => 
+      updatedLogIds.includes(log.id) ? { ...log, status: 'approved' as const } : log
+    ));
+
+    // 2. Unlock matching listing items as premium
+    let updatedCount = 0;
+    const updatedTitles: string[] = [];
+
+    setListings(prev => prev.map(listing => {
+      const correspondingLog = pendingLogs.find(log => log.listingId === listing.id);
+      if (correspondingLog) {
+        updatedCount++;
+        updatedTitles.push(listing.title);
+
+        let mappedPlan: 'vip' | 'highlight-30' | 'highlight-7' | 'monthly' = 'highlight-30';
+        const planLower = correspondingLog.plan.toLowerCase();
+        if (planLower.includes('vip') || planLower.includes('platinum')) {
+          mappedPlan = 'vip';
+        } else if (planLower.includes('7') || planLower.includes('sete')) {
+          mappedPlan = 'highlight-7';
+        } else if (planLower.includes('monthly') || planLower.includes('mensal') || planLower.includes('multi')) {
+          mappedPlan = 'monthly';
+        }
+
+        return {
+          ...listing,
+          isPremium: true,
+          premiumPlan: mappedPlan,
+          isApproved: true, // Autoapprove on premium payment
+        };
+      }
+      return listing;
+    }));
+
+    if (updatedCount > 0) {
+      triggerAlert('success', `⚡ Webhook Recebido: Pagamento Pix compensado automaticamente para "${updatedTitles.join(', ')}"! Recursos Premium Ativados.`);
+    }
+
+    return { checked: pendingLogs.length, updatedCount };
+  };
+
+  // Run the webhook payment service check periodically in the background (simulation of active cron/webhook router)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      simulateWebhookPaymentVerification();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [paymentLogs]);
 
   // --- UI Layout state control ---
   const [currentTab, setCurrentTab] = useState<'home' | 'my-ads' | 'favorites' | 'about' | 'privacy' | 'cookies' | 'terms' | 'sitemap' | 'contact' | 'help' | 'chat' | 'admin'>('home');
@@ -425,16 +486,22 @@ export default function App() {
   };
 
   const handleUpgradeToPremium = (id: string, planName: string = 'Destaque Premium', amount: number = 29.90) => {
+    const matchedAd = listings.find((l) => l.id === id);
+
     setListings((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, isPremium: true } : l))
+      prev.map((l) => (l.id === id ? { ...l, isPremium: true, premiumPlan: planName.toLowerCase().includes('vip') ? 'vip' : 'highlight-30' } : l))
     );
 
     // Record payment log
-    const newLog = {
+    const newLog: PaymentLog = {
       id: `pay_${Date.now()}`,
+      listingId: id,
+      listingTitle: matchedAd?.title || 'Anúncio',
       userEmail: loggedInUser?.email || 'anonimo@vivalocal.com',
       plan: planName,
       amount: amount,
+      method: 'pix',
+      status: 'approved',
       createdAt: new Date().toISOString()
     };
     const updatedLogs = [newLog, ...paymentLogs];
@@ -565,6 +632,7 @@ export default function App() {
             siteSettings={siteSettings}
             onUpdateSiteSettings={(settings) => setSiteSettings(prev => ({ ...prev, ...settings }))}
             onDeleteUser={handleDeleteUser}
+            onTriggerWebhook={simulateWebhookPaymentVerification}
           />
         ) : (
           // Case 6: Public listings browser (Home / Search & Favorites tabs)

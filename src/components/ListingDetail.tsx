@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MapPin, Calendar, Eye, Phone, Mail, Send, CheckCircle2, 
-  ShieldAlert, Heart, Star, Share2, AlertTriangle, QrCode, PlayCircle, BarChart3, Map, Check, X
+  ShieldAlert, Heart, Star, Share2, AlertTriangle, QrCode, PlayCircle, BarChart3, Map, Check, X, Globe
 } from 'lucide-react';
 import { Listing } from '../types';
 import { CATEGORIES } from '../data/seedData';
@@ -528,6 +528,25 @@ export default function ListingDetail({
                 </button>
               )}
             </div>
+
+            {/* Website External Link matching: "Após o cliente realizar o pagamento e ele ser confirmado, liberar automaticamente a opção de adicionar links nos anúncios." */}
+            {listing.externalLink && (
+              <div className="pt-3.5 border-t border-gray-150 mt-3 animate-scaleUp">
+                <a
+                  href={listing.externalLink.startsWith('http') ? listing.externalLink : `https://${listing.externalLink}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md transform hover:scale-[1.01]"
+                >
+                  <Globe className="h-4.5 w-4.5 shrink-0" />
+                  <span>Acessar Website / Link Oficial</span>
+                </a>
+                <p className="text-[9px] text-blue-600 font-black text-center mt-2 flex items-center justify-center gap-1">
+                  <span className="h-1.5 w-1.5 bg-blue-500 rounded-full animate-ping"></span>
+                  Link verificado do Anunciante Premium
+                </p>
+              </div>
+            )}
           </div>
 
           {/* UPGRADED: Sharing, QR Code and Management Action Hub */}

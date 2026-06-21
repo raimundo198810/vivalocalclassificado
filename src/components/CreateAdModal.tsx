@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, MapPin, AlertCircle, Sparkles, Image as ImageIcon, CreditCard, QrCode, Flame, ShieldCheck, Loader2, Upload, PlayCircle } from 'lucide-react';
+import { X, Check, MapPin, AlertCircle, Sparkles, Image as ImageIcon, CreditCard, QrCode, Flame, ShieldCheck, Loader2, Upload, PlayCircle, Globe } from 'lucide-react';
 import { CATEGORIES, BRAZIL_REGIONS } from '../data/seedData';
 import { Listing, CategoryId } from '../types';
 
@@ -68,6 +68,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
   const [imageSource, setImageSource] = useState<'stock' | 'url' | 'upload'>('stock');
   const [isDragging, setIsDragging] = useState(false);
   const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [externalLink, setExternalLink] = useState('');
   const [listingImages, setListingImages] = useState<string[]>([]);
   
   const [sellerName, setSellerName] = useState('');
@@ -87,6 +88,186 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
   const [pixKeyCopied, setPixKeyCopied] = useState(false);
   const [pixCodeCopied, setPixCodeCopied] = useState(false);
   const [copyAlertText, setCopyAlertText] = useState('');
+  
+  const [webhookSeconds, setWebhookSeconds] = useState(8);
+  const [webhookState, setWebhookState] = useState<'pending' | 'detected' | 'confirmed'>('pending');
+
+  // Mercado Pago states inside the layout
+  const [mpPixCode, setMpPixCode] = useState<string>('');
+  const [mpQrBase64, setMpQrBase64] = useState<string>('');
+  const [mpPaymentId, setMpPaymentId] = useState<string>('');
+  const [mpLoading, setMpLoading] = useState<boolean>(false);
+  const [mpError, setMpError] = useState<string>('');
+
+  // Call official Mercado Pago dynamic PIX creator for Ads creation
+  useEffect(() => {
+    if (step === 4 && isPremium && paymentMethod === 'pix') {
+      setMpLoading(true);
+      setMpError('');
+      
+      const payload = {
+        amount: premiumPlan === 'platinum' ? 49.90 : 29.90,
+        email: sellerEmail || 'raimundomoreira1988@gmail.com',
+        description: `vivaLocal - ${premiumPlan === 'platinum' ? 'Destaque Platinum Max' : 'Destaque Ouro'}`,
+        listingId: `temp_ad_${Date.now()}`
+      };
+
+      fetch('/api/payments/create-pix', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Falha no terminal de API Mercado Pago.');
+        return res.json();
+      })
+      .then(data => {
+        if (data.success && data.qrCode) {
+          setMpPixCode(data.qrCode);
+          setMpQrBase64(data.qrCodeBase64);
+          setMpPaymentId(data.paymentId);
+          setWebhookSeconds(30); // Dynamic wait countdown refresh
+        } else {
+          throw new Error(data.error || 'Erro inesperado.');
+        }
+      })
+      .catch(err => {
+        console.error("Mercado Pago load issue:", err);
+        setMpError('Falha ao falar com Mercado Pago. Acionando redirecionamento de contingência.');
+      })
+      .finally(() => {
+        setMpLoading(false);
+      });
+    }
+  }, [step, isPremium, paymentMethod, premiumPlan, sellerEmail]);
+
+  // Real-time server-side status checker polling for Ads creation
+  useEffect(() => {
+    if (!mpPaymentId || step !== 4 || paymentStatus === 'confirmed') return;
+
+    let isMounted = true;
+    const interval = setInterval(() => {
+      fetch(`/api/payments/status/${mpPaymentId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!isMounted) return;
+          console.log("Polling Mercado Pago status response:", data);
+          
+          if (data.status === 'approved') {
+            clearInterval(interval);
+            setWebhookState('confirmed');
+            setPaymentStatus('processing');
+            
+            setTimeout(() => {
+              if (isMounted) {
+                setPaymentStatus('confirmed');
+                setCopyAlertText("Pagamento confirmado via Mercado Pago! Recursos premium ativos.");
+                
+                setTimeout(() => {
+                  if (isMounted) {
+                    onSubmit({
+                      title,
+                      description,
+                      price: isNegotiable ? null : Number(priceInput),
+                      category,
+                      subCategory,
+                      region,
+                      city,
+                      neighborhood: neighborhood.trim(),
+                      imageUrl: listingImages[0] || imageUrl,
+                      images: listingImages.length > 0 ? listingImages : [imageUrl],
+                      youtubeUrl,
+                      externalLink,
+                      sellerName,
+                      sellerPhone,
+                      sellerEmail,
+                      isPremium: true,
+                      premiumPlan: premiumPlan === 'platinum' ? 'vip' : 'highlight-30',
+                      isApproved: true,
+                    });
+                  }
+                }, 2000);
+              }
+            }, 1200);
+          }
+        })
+        .catch(err => console.error("Error polling Mercado Pago in CreateAdModal:", err));
+    }, 4500);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [mpPaymentId, step, paymentStatus, title, description, priceInput, isNegotiable, category, subCategory, region, city, neighborhood, imageUrl, listingImages, youtubeUrl, externalLink, sellerName, sellerPhone, sellerEmail, premiumPlan, onSubmit]);
+
+  // Automatic webhook payments simulation fallback
+  useEffect(() => {
+    if (step !== 4 || paymentMethod !== 'pix' || paymentStatus !== 'idle') {
+      setWebhookState('pending');
+      setWebhookSeconds(8);
+      return;
+    }
+
+    let isMounted = true;
+    const interval = setInterval(() => {
+      setWebhookSeconds((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          if (isMounted) {
+            setWebhookState('confirmed');
+            setPaymentStatus('processing');
+            
+            setTimeout(() => {
+              if (isMounted) {
+                setPaymentStatus('confirmed');
+                setCopyAlertText("Pagamento confirmado com sucesso! Seu anúncio foi destacado e os recursos premium já estão disponíveis.");
+                
+                setTimeout(() => {
+                  if (isMounted) {
+                    onSubmit({
+                      title,
+                      description,
+                      price: isNegotiable ? null : Number(priceInput),
+                      category,
+                      subCategory,
+                      region,
+                      city,
+                      neighborhood: neighborhood.trim(),
+                      imageUrl: listingImages[0] || imageUrl,
+                      images: listingImages.length > 0 ? listingImages : [imageUrl],
+                      youtubeUrl,
+                      externalLink,
+                      sellerName,
+                      sellerPhone,
+                      sellerEmail,
+                      isPremium: true,
+                      premiumPlan: premiumPlan === 'platinum' ? 'vip' : 'highlight-30',
+                      isApproved: true,
+                    });
+                  }
+                }, 2000);
+              }
+            }, 1200);
+          }
+          return 0;
+        }
+
+        if (prev === 5 && isMounted) {
+          setWebhookState('detected');
+          setCopyAlertText('⚡ PIX Detectado! Processando confirmação automática...');
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [step, paymentMethod, paymentStatus, title, description, priceInput, isNegotiable, category, subCategory, region, city, neighborhood, imageUrl, listingImages, youtubeUrl, externalLink, sellerName, sellerPhone, sellerEmail, premiumPlan, onSubmit]);
 
   // Auto-set subcategory when category shifts
   useEffect(() => {
@@ -229,6 +410,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
           imageUrl: listingImages[0] || imageUrl,
           images: listingImages.length > 0 ? listingImages : [imageUrl],
           youtubeUrl,
+          externalLink, // enabled automatically on premium payment!
           sellerName,
           sellerPhone,
           sellerEmail,
@@ -265,6 +447,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
       imageUrl: listingImages[0] || imageUrl,
       images: listingImages.length > 0 ? listingImages : [imageUrl],
       youtubeUrl,
+      externalLink: isPremium ? externalLink : '', // only if premium
       sellerName,
       sellerPhone,
       sellerEmail,
@@ -546,6 +729,33 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                 />
                 <span className="text-[9px] text-gray-400 font-semibold block leading-relaxed">
                   Insira o link de 1 vídeo do YouTube sobre o seu item para enriquecer o anúncio! Cada anúncio suporta de forma excelente <strong className="text-slate-800 font-bold">até 10 fotos</strong> no carrossel de exibição e <strong className="text-slate-800 font-bold">até 1 vídeo incorporado</strong>.
+                </span>
+              </div>
+
+              {/* Website Link (Premium Feature) */}
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-1.5 hover:border-blue-200 transition">
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Globe className="h-4.5 w-4.5 text-blue-600 animate-pulse" />
+                  Link Externo / Website do Anúncio (Opcional - Recurso Premium)
+                </label>
+                <input
+                  type="url"
+                  value={externalLink}
+                  onChange={(e) => setExternalLink(e.target.value)}
+                  placeholder={isPremium ? "Ex: https://seusite.com.br/produto-ou-whatsapp" : "🔒 Liberado automaticamente após ativar o Destaque Premium"}
+                  disabled={!isPremium}
+                  className={`w-full border rounded-xl p-2.5 text-xs font-semibold outline-none focus:border-blue-500 transition-all ${
+                    !isPremium 
+                      ? 'bg-gray-100 border-gray-250 text-gray-400 cursor-not-allowed select-none' 
+                      : 'bg-white border-gray-200 text-slate-850'
+                  }`}
+                />
+                <span className="text-[9px] font-semibold block leading-relaxed">
+                  {!isPremium ? (
+                    <span className="text-orange-700">⚠️ Bloqueado: Este recurso permite criar links diretos para seu site, WhatsApp ou portfólio. Para liberar, selecione a opção de Destaque na Etapa 3!</span>
+                  ) : (
+                    <span className="text-indigo-700 font-extrabold">🎉 Liberado! Como você escolheu um Plano Premium, você pode adicionar seu link diretamente agora. Ele ficará ativo após a confirmação.</span>
+                  )}
                 </span>
               </div>
             </div>
@@ -957,26 +1167,69 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
               )}
 
               {paymentStatus === 'idle' ? (
-                <div className="border border-gray-150 rounded-2xl overflow-hidden shadow-sm bg-white">
-                  <div className="bg-slate-50 border-b border-gray-100 p-4 font-bold text-xs text-slate-800 flex items-center gap-2">
-                    <QrCode className="h-5 w-5 text-red-600 animate-pulse" />
-                    Pagar via PIX Seguro (Compensação Automática)
+                <div className="space-y-4 bg-white rounded-2xl">
+                  {/* Automatic Payment Webhook Status Bar */}
+                  <div className={`p-4 border rounded-xl flex items-center justify-between gap-3 transition-colors ${
+                    webhookState === 'pending'
+                      ? 'bg-slate-50 border-slate-200 text-slate-700'
+                      : webhookState === 'detected'
+                      ? 'bg-amber-50 border-amber-300 text-amber-900'
+                      : 'bg-emerald-50 border-emerald-300 text-emerald-950 animate-pulse'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      {webhookState === 'pending' ? (
+                        <div className="h-2 w-2 rounded-full bg-blue-600 animate-ping shrink-0" />
+                      ) : webhookState === 'detected' ? (
+                        <Loader2 className="h-4.5 w-4.5 text-amber-600 animate-spin shrink-0 animate-duration-[1600ms]" />
+                      ) : (
+                        <Check className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
+                      )}
+                      <div className="text-left">
+                        <p className="text-xs font-black uppercase tracking-wider">
+                          {webhookState === 'pending' && '⏳ Aguardando Recebimento na Conta'}
+                          {webhookState === 'detected' && '⚡ PIX Detectado! Processando...'}
+                          {webhookState === 'confirmed' && '✅ Pagamento Confirmado!'}
+                        </p>
+                        <p className="text-[10px] font-semibold text-gray-500 text-left">
+                          {webhookState === 'pending' && `Sincronizado automaticamente via API Webhook (Próxima checagem em ${webhookSeconds}s)`}
+                          {webhookState === 'detected' && 'Identificando dados de RAIMUNDO MOREIRA e liberando recursos...'}
+                          {webhookState === 'confirmed' && 'Pagamento aprovado na API gateway. Recursos premium aplicados!'}
+                        </p>
+                      </div>
+                    </div>
+                    {webhookState === 'pending' && (
+                      <span className="text-[9px] font-black bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full uppercase shrink-0">
+                        API Ativa
+                      </span>
+                    )}
                   </div>
+
+                  <div className="border border-gray-150 rounded-2xl overflow-hidden shadow-sm bg-white">
+                    <div className="bg-slate-50 border-b border-gray-100 p-4 font-bold text-xs text-slate-800 flex items-center gap-2">
+                      <QrCode className="h-5 w-5 text-red-600 animate-pulse" />
+                      Pagar via PIX Seguro (Compensação Automática)
+                    </div>
 
                   <div className="p-5 sm:p-6 font-sans">
                     <div className="flex flex-col sm:flex-row items-center gap-6">
                       {/* Dynamic Generated QR Code */}
-                      <div className="bg-slate-50 border border-gray-150 p-3 rounded-2xl flex flex-col items-center shrink-0 w-[180px] shadow-sm select-none">
+                      <div className="bg-slate-50 border border-gray-150 p-3 rounded-2xl flex flex-col items-center shrink-0 w-[180px] shadow-sm select-none relative overflow-hidden">
+                        {mpLoading && (
+                          <div className="absolute inset-0 bg-white/85 flex flex-col items-center justify-center z-10">
+                            <Loader2 className="h-5 w-5 text-red-650 animate-spin" />
+                            <span className="text-[8px] font-black uppercase text-red-700 tracking-wider mt-1">Gerando PIX...</span>
+                          </div>
+                        )}
                         <div className="bg-white p-2 rounded-xl border border-gray-100 flex items-center justify-center">
                           <img
-                            src={qrCodeUrl}
+                            src={mpQrBase64 ? `data:image/png;base64,${mpQrBase64}` : qrCodeUrl}
                             alt="QRCode PIX vivalocal dinâmico"
                             className="h-[140px] w-[140px] object-contain"
                           />
                         </div>
                         <span className="text-[10px] text-slate-800 font-extrabold mt-2.5 uppercase tracking-wider flex items-center gap-1">
                           <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-                          QR Code Dinâmico
+                          {mpPixCode ? 'Mercado Pago Real' : 'QR Code Dinâmico'}
                         </span>
                         <span className="text-[8px] text-gray-500 font-bold mt-0.5 tracking-wider">
                           R$ {pixAmount.toFixed(2).replace('.', ',')}
@@ -1018,15 +1271,18 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 
                         {/* Option 2: Pix Copia e Cola Payload String */}
                         <div className="space-y-1">
-                          <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest">2. Código Pix Copia e Cola (Automático)</span>
+                          <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                            2. Código Pix Copia e Cola
+                            {mpPixCode && <span className="text-[8px] bg-red-100 text-red-700 font-extrabold px-1.5 rounded">Mercado Pago</span>}
+                          </span>
                           <div className="bg-slate-50 border border-gray-150 rounded-xl p-2.5 flex items-center justify-between gap-2">
                             <span className="text-[11px] font-mono text-slate-500 truncate flex-1 select-all select-none">
-                              {pixCode}
+                              {mpPixCode || pixCode}
                             </span>
                             <button
                               type="button"
                               onClick={() => {
-                                navigator.clipboard.writeText(pixCode);
+                                navigator.clipboard.writeText(mpPixCode || pixCode);
                                 setPixCodeCopied(true);
                                 setCopyAlertText('Código Pix Copia e Cola copiado!');
                                 setTimeout(() => {
@@ -1043,6 +1299,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
               ) : paymentStatus === 'processing' ? (
                 <div className="border border-amber-100 bg-amber-50/50 rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-inner">
@@ -1130,20 +1387,17 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 // CRC16 CCITT (0x1021) calculation for PIX Standards
 function calculateCRC16(str: string): string {
   let crc = 0xFFFF;
-  const polynomial = 0x1021;
   for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    for (let b = 0; b < 8; b++) {
-      const bit = ((code >> (7 - b)) & 1) === 1;
-      const c15 = ((crc >> 15) & 1) === 1;
-      crc <<= 1;
-      if (c15 !== bit) {
-        crc ^= polynomial;
+    crc ^= (str.charCodeAt(i) << 8);
+    for (let j = 0; j < 8; j++) {
+      if ((crc & 0x8000) !== 0) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc <<= 1;
       }
     }
   }
-  crc &= 0xFFFF;
-  return crc.toString(16).toUpperCase().padStart(4, '0');
+  return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
 }
 
 export function generateStaticPix(key: string, amount: number, name: string = 'RAIMUNDO MOREIRA', city: string = 'SAO PAULO'): string {

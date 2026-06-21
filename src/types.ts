@@ -18,6 +18,7 @@ export interface Listing {
   premiumPlan?: 'vip' | 'highlight-30' | 'highlight-7' | 'monthly' | 'none';
   views: number;
   youtubeUrl?: string;
+  externalLink?: string;
   sellerId?: string; // linked to user
   isApproved?: boolean; // default to true or adjustable by admin
   sellerRating?: number;
