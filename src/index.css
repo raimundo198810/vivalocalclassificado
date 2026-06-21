@@ -46,6 +46,15 @@
   40%, 80% { transform: translateX(4px); }
 }
 
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-5px) rotate(5deg);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -60,6 +69,103 @@
 
 .animate-shake {
   animation: shake 0.3s ease-in-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 3D Deep Depth Styles */
+.card-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.3s ease;
+  box-shadow: 0 6px 16px -4px rgba(15, 23, 42, 0.06), 
+              0 2px 4px -2px rgba(15, 23, 42, 0.04), 
+              inset 0 1px 0px rgba(255, 255, 255, 0.8);
+}
+
+.card-3d:hover {
+  transform: translateY(-8px) rotateX(2.5deg) rotateY(1deg);
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 
+              0 10px 10px -5px rgba(15, 23, 42, 0.03),
+              0 30px 40px -15px rgba(0, 0, 0, 0.06),
+              inset 0 1px 0px rgba(255, 255, 255, 0.9);
+}
+
+/* Premium 3D Golden/Warm shadow style */
+.card-3d-premium {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.3s ease;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.06), 
+              0 10px 25px -5px rgba(245, 158, 11, 0.04),
+              inset 0 1px 0px rgba(255, 255, 255, 0.9);
+}
+
+.card-3d-premium:hover {
+  transform: translateY(-10px) rotateX(3deg) rotateY(-1.5deg);
+  box-shadow: 0 25px 35px -5px rgba(245, 158, 11, 0.15), 
+              0 12px 15px -5px rgba(245, 158, 11, 0.08),
+              0 40px 60px -15px rgba(245, 158, 11, 0.1),
+              inset 0 1px 0px rgba(255, 255, 255, 1);
+}
+
+/* Tactile 3D Button styles */
+.btn-3d-red {
+  position: relative;
+  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  border-bottom: 4px solid #b91c1c; /* Red 700 */
+}
+
+.btn-3d-red:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-3d-slate {
+  position: relative;
+  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  border-bottom: 4px solid #1e293b; /* Slate 800 */
+}
+
+.btn-3d-slate:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-3d-emerald {
+  position: relative;
+  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  border-bottom: 4px solid #047857; /* Emerald 700 */
+}
+
+.btn-3d-emerald:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}
+
+.btn-3d-white {
+  position: relative;
+  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  border-bottom: 3.5px solid #cbd5e1; /* Slate 300 */
+}
+
+.btn-3d-white:active {
+  transform: translateY(2.5px);
+  border-bottom-width: 1px;
+}
+
+/* Perspective tilt layout container */
+.container-3d-view {
+  perspective: 2000px;
+}
+
+.sheet-3d {
+  transform: rotateX(0.5deg) rotateY(-0.5deg);
+  box-shadow: 0 15px 35px -5px rgba(15, 23, 42, 0.05),
+              0 8px 12px -5px rgba(15, 23, 42, 0.02),
+              inset 0 1px 0px rgba(255, 255, 255, 0.8);
 }
 
 /* Custom Scrollbars */

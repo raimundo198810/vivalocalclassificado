@@ -47,8 +47,8 @@ export default function ListingCard({
       onClick={onClick}
       className={`group relative flex flex-col md:flex-row bg-white border rounded-xl overflow-hidden cursor-pointer transition-all ${
         listing.isPremium
-          ? 'border-amber-300 bg-amber-50/15 hover:border-amber-400 shadow-[0_2px_12px_rgba(245,158,11,0.08)] hover:shadow-[0_4px_16px_rgba(245,158,11,0.15)] hover:scale-[1.01]'
-          : 'border-slate-100 hover:border-slate-300 hover:shadow-md hover:scale-[1.01]'
+          ? 'card-3d-premium border-amber-300 bg-amber-50/15 hover:border-amber-400'
+          : 'card-3d border-slate-100 hover:border-slate-300'
       }`}
       id={`listing-card-${listing.id}`}
     >

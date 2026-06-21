@@ -50,10 +50,10 @@ export default function Hero({
         </p>
 
         {/* Large Search Box */}
-        <form onSubmit={onSearchSubmit} className="bg-white rounded-2xl sm:rounded-full p-2 shadow-xl flex flex-col sm:flex-row items-stretch gap-2 text-gray-800" id="hero-search-form">
+        <form onSubmit={onSearchSubmit} className="bg-white rounded-2xl sm:rounded-full p-2 shadow-[0_12px_30px_rgba(0,0,0,0.25)] flex flex-col sm:flex-row items-stretch gap-2 text-gray-800 border-b-4 border-slate-700/50" id="hero-search-form">
           {/* Query input */}
           <div className="flex-1 flex items-center px-4 py-1.5 border-b sm:border-b-0 sm:border-r border-gray-100">
-            <Search className="h-5 w-5 text-gray-400 mr-2 shrink-0" />
+            <Search className="h-5 w-5 text-gray-400 mr-2 shrink-0 animate-pulse" />
             <input
               type="text"
               value={searchQuery}
@@ -85,14 +85,14 @@ export default function Hero({
           {/* Search Action */}
           <button
             type="submit"
-            className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-xl sm:rounded-full px-8 py-3 text-sm transition-all shadow-md shrink-0 cursor-pointer"
+            className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-xl sm:rounded-full px-8 py-3 text-sm transition-all shadow-md shrink-0 cursor-pointer btn-3d-red"
           >
             Buscar
           </button>
         </form>
 
         {/* Categories Shortcut Grid */}
-        <div className="mt-10 grid grid-cols-3 sm:grid-cols-6 gap-3.5 select-none" id="categories-grid">
+        <div className="mt-10 grid grid-cols-3 sm:grid-cols-6 gap-4 select-none container-3d-view" id="categories-grid">
           {CATEGORIES.map((cat) => {
             const isChosen = selectedCategory === cat.id;
             const count = listingsCounts[cat.id] || 0;
@@ -106,22 +106,26 @@ export default function Hero({
                 }}
                 className={`flex flex-col items-center p-3.5 rounded-xl border transition-all cursor-pointer text-center group ${
                   isChosen
-                    ? 'bg-red-600 border-red-600 text-white scale-[1.04] shadow-md'
-                    : 'bg-white/10 hover:bg-white/15 border-white/10 text-white hover:scale-[1.02]'
+                    ? 'bg-red-600 border-red-600 text-white scale-[1.04] shadow-[0_12px_24px_-6px_rgba(220,38,38,0.5)] border-b-4 border-red-800'
+                    : 'bg-white/10 hover:bg-white/15 border-white/15 text-white card-3d'
                 }`}
+                style={{ transformStyle: 'preserve-3d' }}
                 id={`hero-cat-${cat.id}`}
               >
-                <div className={`p-2 rounded-lg mb-2 flex items-center justify-center transition-colors ${
-                  isChosen ? 'bg-red-700 text-white' : 'bg-white/10 text-gray-100 group-hover:text-white'
-                }`}>
+                <div 
+                  className={`p-2 rounded-lg mb-2 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 ${
+                    isChosen ? 'bg-red-700 text-white' : 'bg-white/10 text-gray-100 group-hover:text-white'
+                  }`}
+                  style={{ transform: 'translateZ(10px)' }}
+                >
                   {getIcon(cat.iconName)}
                 </div>
-                <span className="text-xs font-bold leading-tight line-clamp-1 block">
+                <span className="text-xs font-bold leading-tight line-clamp-1 block" style={{ transform: 'translateZ(15px)' }}>
                   {cat.name}
                 </span>
                 <span className={`text-[10px] mt-1 font-semibold ${
                   isChosen ? 'text-red-100' : 'text-gray-400'
-                }`}>
+                }`} style={{ transform: 'translateZ(5px)' }}>
                   {count} anúncios
                 </span>
               </div>

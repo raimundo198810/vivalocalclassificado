@@ -12,8 +12,11 @@ import ListingDetail from './components/ListingDetail';
 import CreateAdModal from './components/CreateAdModal';
 import MyAdsDashboard from './components/MyAdsDashboard';
 import { Listing, SearchFilters, CategoryId } from './types';
-import { INITIAL_LISTINGS } from './data/seedData';
+import { INITIAL_LISTINGS, CATEGORIES } from './data/seedData';
 import { Heart, Sparkles, AlertCircle, ShoppingBag, PlusCircle, CheckCircle } from 'lucide-react';
+// @ts-ignore
+import brandLogo3d from './assets/images/vivalocal_logo_3d_1782000935551.jpg';
+import LegalPages from './components/LegalPages';
 
 export default function App() {
   // --- Persistent Storage State Sync ---
@@ -58,7 +61,7 @@ export default function App() {
   }, [myCreatedIds]);
 
   // --- UI Layout state control ---
-  const [currentTab, setCurrentTab] = useState<'home' | 'my-ads' | 'favorites'>('home');
+  const [currentTab, setCurrentTab] = useState<'home' | 'my-ads' | 'favorites' | 'about' | 'privacy' | 'cookies' | 'terms' | 'sitemap' | 'contact' | 'help'>('home');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showNotification, setShowNotification] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
@@ -345,8 +348,20 @@ export default function App() {
             isFavorite={favorites.includes(selectedListing.id)}
             onToggleFavorite={() => handleToggleFavorite(selectedListing.id)}
           />
+        ) : ['about', 'privacy', 'cookies', 'terms', 'sitemap', 'contact', 'help'].includes(currentTab) ? (
+          // Case 2: Legal/Institutional/Support Pages
+          <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 max-w-4xl mx-auto sheet-3d">
+            <LegalPages
+              page={currentTab as any}
+              onNavigate={(page) => {
+                setCurrentTab(page);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              categoriesList={CATEGORIES}
+            />
+          </div>
         ) : currentTab === 'my-ads' ? (
-          // Case 2: Personal uploaded items list dashboard manager
+          // Case 3: Personal uploaded items list dashboard manager
           <MyAdsDashboard
             myListings={myListings}
             onDeleteListing={handleDeleteListing}
@@ -470,17 +485,45 @@ export default function App() {
       )}
 
       {/* Global footer detail block */}
-      <footer className="bg-slate-900 text-gray-400 mt-20 border-t border-slate-850 py-10 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-xs font-medium">
-          <div className="space-y-3">
-            <h4 className="text-sm font-black text-white tracking-tight">
-              viva<span className="text-red-500">local</span> Classificados
-            </h4>
+      <footer className="bg-slate-900 text-gray-400 mt-20 border-t border-slate-850 py-12 px-4 shadow-inner">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-xs font-medium">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <img
+                src={brandLogo3d}
+                alt="Vivalocal Logo 3D"
+                className="h-8 w-8 object-cover rounded-lg shadow border border-slate-800 animate-float"
+                referrerPolicy="no-referrer"
+              />
+              <h4 className="text-sm font-black text-white tracking-tight">
+                viva<span className="text-red-500">local</span> Classificados
+              </h4>
+            </div>
             <p className="leading-relaxed font-semibold">
               O Vivalocal é a plataforma líder em classificados locais no Brasil. Projetada para facilitar anúncios gratuitos de compra e venda, imóveis, serviços e veículos com segurança e facilidade.
             </p>
+            {/* WhatsApp Contact in footer with Logo matching requested info */}
+            <div className="pt-1">
+              <a
+                href="https://wa.me/5549998057924"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow transition duration-200 transform hover:scale-[1.02]"
+                id="footer-whatsapp-btn"
+              >
+                <svg
+                  className="w-4 h-4 fill-current shrink-0"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.731-1.456L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.963C16.528 2.015 14.07 1.01 11.493 1.01 6.059 1.01 1.633 5.378 1.629 10.81c-.001 1.762.463 3.484 1.347 5.015l-.974 3.559 3.645-.952zm12.396-7.391c-.265-.134-1.57-.775-1.816-.865-.246-.09-.425-.134-.604.135-.18.268-.693.865-.851 1.045-.157.18-.314.202-.579.068-1.294-.647-2.149-1.144-2.994-2.585-.22-.377.22-.35.63-1.169.069-.135.034-.253-.017-.354-.05-.1-.425-1.023-.583-1.403-.153-.368-.323-.318-.445-.324l-.38-.008c-.13 0-.341.049-.522.246-.18.196-.687.671-.687 1.637 0 .965.703 1.897.8 2.031.1.134 1.383 2.112 3.351 2.961.469.202.834.323 1.119.414.471.151.901.129 1.24.078.378-.056 1.57-.64 1.792-1.258.223-.617.223-1.144.156-1.257-.067-.112-.246-.18-.512-.313z" />
+                </svg>
+                <span>WhatsApp: (49) 99805-7924</span>
+              </a>
+            </div>
           </div>
-          <div className="space-y-2">
+
+          <div className="space-y-3">
             <h4 className="text-sm font-black text-white">Categorias em Destaque</h4>
             <ul className="space-y-1.5 font-semibold">
               <li className="hover:text-white cursor-pointer transition-colors">Celulares & Telefonia</li>
@@ -489,17 +532,56 @@ export default function App() {
               <li className="hover:text-white cursor-pointer transition-colors">Honda Civic & Carros Usados</li>
             </ul>
           </div>
-          <div className="space-y-2.5">
-            <h4 className="text-sm font-black text-white">Conselhos de Negociação</h4>
-            <p className="leading-relaxed font-semibold">
-              Sempre realize encontros ou conferências presenciais em locais de alta movimentação para concretizar transações comerciais seguras. Desconfie de faturas externas de pagamento antecipado.
-            </p>
-            <p className="text-[10px] text-gray-500 pt-1">
-              &copy; 2026 Vivalocal. Feito com cuidado de interface e design para fins de demonstração.
+
+          <div className="space-y-3">
+            <h4 className="text-sm font-black text-white">Institucional</h4>
+            <ul className="space-y-1.5 font-semibold">
+              <li onClick={() => { setCurrentTab('about'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Sobre Nós</li>
+              <li onClick={() => { setCurrentTab('privacy'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Política de Privacidade</li>
+              <li onClick={() => { setCurrentTab('cookies'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Política de Cookies</li>
+              <li onClick={() => { setCurrentTab('terms'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Termos de Uso</li>
+              <li onClick={() => { setCurrentTab('sitemap'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Mapa do Site</li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="text-sm font-black text-white">Ajuda & Suporte</h4>
+            <ul className="space-y-1.5 font-semibold">
+              <li onClick={() => { setCurrentTab('contact'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Fale Conosco</li>
+              <li onClick={() => { setCurrentTab('help'); setSelectedListing(null); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-white cursor-pointer transition-colors">Central de Ajuda</li>
+            </ul>
+            <p className="leading-relaxed text-gray-500 font-semibold pt-1">
+              Sempre realize encontros em locais públicos e seguros para concluir negociações presenciais.
             </p>
           </div>
         </div>
+
+        <div className="max-w-7xl mx-auto border-t border-slate-800 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[10px] text-gray-500 font-semibold select-none">
+          <span>&copy; 2026 Todos os direitos reservados. Vivalocal Classificados</span>
+          <span>A melhor experiência de classificados online</span>
+        </div>
       </footer>
+
+      {/* Floating WhatsApp Quick Contact Button matching request items */}
+      <a
+        href="https://wa.me/5549998057924"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20ba5a] text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 group animate-pulse"
+        title="WhatsApp Vivalocal: (49) 99805-7924"
+        id="floating-whatsapp-btn"
+      >
+        <svg
+          className="w-7 h-7 fill-current"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.731-1.456L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.963C16.528 2.015 14.07 1.01 11.493 1.01 6.059 1.01 1.633 5.378 1.629 10.81c-.001 1.762.463 3.484 1.347 5.015l-.974 3.559 3.645-.952zm12.396-7.391c-.265-.134-1.57-.775-1.816-.865-.246-.09-.425-.134-.604.135-.18.268-.693.865-.851 1.045-.157.18-.314.202-.579.068-1.294-.647-2.149-1.144-2.994-2.585-.22-.377.22-.35.63-1.169.069-.135.034-.253-.017-.354-.05-.1-.425-1.023-.583-1.403-.153-.368-.323-.318-.445-.324l-.38-.008c-.13 0-.341.049-.522.246-.18.196-.687.671-.687 1.637 0 .965.703 1.897.8 2.031.1.134 1.383 2.112 3.351 2.961.469.202.834.323 1.119.414.471.151.901.129 1.24.078.378-.056 1.57-.64 1.792-1.258.223-.617.223-1.144.156-1.257-.067-.112-.246-.18-.512-.313z" />
+        </svg>
+        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-out font-bold text-sm text-nowrap select-none ml-0 group-hover:ml-2">
+          Suporte Whatsapp
+        </span>
+      </a>
     </div>
   );
 }

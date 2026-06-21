@@ -1,6 +1,8 @@
 import React from 'react';
 import { MapPin, PlusCircle, Search, Heart, User, ClipboardList } from 'lucide-react';
 import { BRAZIL_REGIONS } from '../data/seedData';
+// @ts-ignore
+import brandLogo3d from '../assets/images/vivalocal_logo_3d_1782000935551.jpg';
 
 interface HeaderProps {
   currentTab: 'home' | 'my-ads' | 'favorites';
@@ -46,14 +48,22 @@ export default function Header({
         <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-start">
           <div 
             onClick={() => setCurrentTab('home')}
-            className="flex items-center gap-1 cursor-pointer select-none"
+            className="flex items-center gap-2 cursor-pointer select-none group"
             id="brand-logo"
           >
-            <span className="text-2xl font-black text-slate-800 tracking-tight">
-              viva<span className="text-red-600">local</span>
-            </span>
-            <div className="bg-red-600 text-[10px] text-white font-bold px-1.5 py-0.5 rounded ml-1 animate-pulse">
-              Classificados
+            <img
+              src={brandLogo3d}
+              alt="Vivalocal Logo 3D"
+              className="h-9 w-9 object-cover rounded-xl shadow-md border border-gray-150 transition-transform duration-300 group-hover:scale-110 animate-float"
+              referrerPolicy="no-referrer"
+            />
+            <div className="flex flex-col">
+              <span className="text-xl font-black text-slate-800 tracking-tight leading-none">
+                viva<span className="text-red-600">local</span>
+              </span>
+              <span className="text-[9px] text-gray-500 font-extrabold tracking-wider uppercase leading-none mt-1">
+                Classificados 3D
+              </span>
             </div>
           </div>
 
@@ -144,7 +154,7 @@ export default function Header({
           {/* BRIGHT RED ACT OF CREATION BUTTON - MAIN VIVALOCAL FEATURE */}
           <button
             onClick={onAnnounceClick}
-            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-md transition-all transform hover:scale-[1.03] cursor-pointer"
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-md transition-all transform hover:scale-[1.03] cursor-pointer btn-3d-red"
             id="header-announce-btn"
           >
             <PlusCircle className="h-4 w-4" />

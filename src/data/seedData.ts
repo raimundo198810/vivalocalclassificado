@@ -185,7 +185,7 @@ export const CATEGORIES: Category[] = [
     id: 'adulto',
     name: 'Adulto & Sex Shop',
     iconName: 'Flame',
-    subCategories: ['Acompanhantes & Encontros', 'Produtos de Sex Shop', 'Fantasias & Lingeries', 'Massagem Sensual', 'Eventos & Despedidas'],
+    subCategories: ['Acompanhantes & Encontros', 'Produtos de Sex Shop', 'Fantasias & Lingeries', 'Massagem Sensual', 'Eventos & Despedidas', 'Sexo', 'Troca de Casal', 'Sexo a Três', 'Sexo em Grupo'],
     color: 'bg-pink-50 text-pink-700 border-pink-100 hover:bg-pink-100'
   }
 ];

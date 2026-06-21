@@ -45,7 +45,7 @@ export default function SidebarFilters({
   const activeCategoryObj = CATEGORIES.find((c) => c.id === filters.category);
 
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-2xl p-5 shadow-sm divide-y divide-gray-100" id="sidebar-filters">
+    <div className="w-full bg-white border border-gray-200 rounded-2xl p-5 sheet-3d divide-y divide-gray-100" id="sidebar-filters">
       {/* Title & Count */}
       <div className="pb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
