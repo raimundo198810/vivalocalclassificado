@@ -187,6 +187,34 @@ export const CATEGORIES: Category[] = [
     iconName: 'Flame',
     subCategories: ['Acompanhantes & Encontros', 'Produtos de Sex Shop', 'Fantasias & Lingeries', 'Massagem Sensual', 'Eventos & Despedidas', 'Sexo', 'Troca de Casal', 'Sexo a Três', 'Sexo em Grupo'],
     color: 'bg-pink-50 text-pink-700 border-pink-100 hover:bg-pink-100'
+  },
+  {
+    id: 'eletronicos',
+    name: 'Eletrônicos & Eletrodomésticos',
+    iconName: 'Tv',
+    subCategories: ['Geladeiras & Freezers', 'Televisores & Smart TVs', 'Ar Condicionado & Aquecedores', 'Fogões & Microondas', 'Máquinas de Lavar', 'Câmeras & Filmadoras', 'Som Residencial & DJ', 'Eletroportáteis de Cozinha'],
+    color: 'bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100'
+  },
+  {
+    id: 'moda-beleza',
+    name: 'Moda, Estética & Beleza',
+    iconName: 'Shirt',
+    subCategories: ['Maquiagem & Cosméticos', 'Perfumes Importados', 'Roupas Femininas', 'Roupas Masculinas', 'Calçados & Tênis', 'Bolsas & Malas de Viagem', 'Relógios, Joias & Bijuterias', 'Cuidado de Cabelo & Estética'],
+    color: 'bg-teal-50 text-teal-700 border-teal-100 hover:bg-teal-100'
+  },
+  {
+    id: 'musica',
+    name: 'Música & Instrumentos',
+    iconName: 'Music',
+    subCategories: ['Guitarras & Violões', 'Teclados, Pianos & Órgãos', 'Baterias, Pratos & Percussão', 'Equipamentos de Áudio & Estúdio', 'Amplificadores & Caixas de Som', 'Instrumentos de Sopro', 'Violinos & Instrumentos de Corda'],
+    color: 'bg-cyan-50 text-cyan-700 border-cyan-100 hover:bg-cyan-100'
+  },
+  {
+    id: 'agro-industria',
+    name: 'Agronegócio & Indústria',
+    iconName: 'Sprout',
+    subCategories: ['Tratores & Implementos', 'Animais, Cavalos & Pecuária', 'Sementes, Mudas & Insumos', 'Sítios, Chácaras & Fazendas', 'Equipamentos Industriais', 'Geradores & Compressores de Ar', 'Ferramentas de Grande Porte'],
+    color: 'bg-lime-50 text-lime-700 border-lime-100 hover:bg-lime-100'
   }
 ];
 

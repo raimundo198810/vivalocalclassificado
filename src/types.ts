@@ -25,7 +25,7 @@ export interface Listing {
   verifiedSeller?: boolean;
 }
 
-export type CategoryId = 'compra-venda' | 'imoveis' | 'servicos' | 'empregos' | 'veiculos' | 'comunidade' | 'adulto';
+export type CategoryId = 'compra-venda' | 'imoveis' | 'servicos' | 'empregos' | 'veiculos' | 'comunidade' | 'adulto' | 'eletronicos' | 'moda-beleza' | 'musica' | 'agro-industria';
 
 export interface Category {
   id: CategoryId;

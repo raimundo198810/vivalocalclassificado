@@ -46,6 +46,26 @@ const STOCK_PHOTOS: Record<CategoryId, { url: string; label: string }[]> = {
     { url: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80', label: 'Coquetel & Noite' },
     { url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=80', label: 'Moda Intíma' },
   ],
+  eletronicos: [
+    { url: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&auto=format&fit=crop&q=80', label: 'Smart TV / Tela' },
+    { url: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&auto=format&fit=crop&q=80', label: 'Eletroportáteis' },
+    { url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=600&auto=format&fit=crop&q=80', label: 'Câmera Fotográfica' },
+  ],
+  'moda-beleza': [
+    { url: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&auto=format&fit=crop&q=80', label: 'Cosméticos / Beleza' },
+    { url: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&auto=format&fit=crop&q=80', label: 'Acessórios & Coleções' },
+    { url: 'https://images.unsplash.com/photo-1509695507497-903c140c43b0?w=600&auto=format&fit=crop&q=80', label: 'Calçados / Tênis' },
+  ],
+  musica: [
+    { url: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=600&auto=format&fit=crop&q=80', label: 'Guitarras & Violões' },
+    { url: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=600&auto=format&fit=crop&q=80', label: 'Pianos / Teclados' },
+    { url: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=600&auto=format&fit=crop&q=80', label: 'Instrumentos de Percussão' },
+  ],
+  'agro-industria': [
+    { url: 'https://images.unsplash.com/photo-1533460004989-cef01064af7e?w=600&auto=format&fit=crop&q=80', label: 'Tratores & Fazenda' },
+    { url: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=600&auto=format&fit=crop&q=80', label: 'Animais de Campo' },
+    { url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80', label: 'Equipamento de Carga' },
+  ],
 };
 
 export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps) {

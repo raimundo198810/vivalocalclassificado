@@ -98,7 +98,20 @@ export default function App() {
   const [categories, setCategories] = useState(() => {
     try {
       const stored = localStorage.getItem('vivalocal_categories');
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const storedParsed = JSON.parse(stored);
+        if (Array.isArray(storedParsed)) {
+          // If the user is missing any of the default categories, force-enrich them
+          const storedIds = new Set(storedParsed.map((c: any) => c.id));
+          const missingCategories = CATEGORIES.filter(c => !storedIds.has(c.id));
+          if (missingCategories.length > 0) {
+            const enriched = [...storedParsed, ...missingCategories];
+            localStorage.setItem('vivalocal_categories', JSON.stringify(enriched));
+            return enriched;
+          }
+          return storedParsed;
+        }
+      }
     } catch {}
     return CATEGORIES;
   });

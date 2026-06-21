@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, ShoppingBag, Home, Wrench, Briefcase, Car, Users, Flame } from 'lucide-react';
+import { Search, ShoppingBag, Home, Wrench, Briefcase, Car, Users, Flame, Tv, Shirt, Music, Sprout } from 'lucide-react';
 import { CATEGORIES } from '../data/seedData';
 import { CategoryId } from '../types';
 
@@ -35,6 +35,10 @@ export default function Hero({
       case 'Car': return <Car className="h-6 w-6" />;
       case 'Users': return <Users className="h-6 w-6" />;
       case 'Flame': return <Flame className="h-6 w-6" />;
+      case 'Tv': return <Tv className="h-6 w-6" />;
+      case 'Shirt': return <Shirt className="h-6 w-6" />;
+      case 'Music': return <Music className="h-6 w-6" />;
+      case 'Sprout': return <Sprout className="h-6 w-6" />;
       default: return <Search className="h-6 w-6" />;
     }
   };
