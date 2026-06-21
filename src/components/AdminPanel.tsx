@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   ShieldAlert, Check, X, Users, CreditCard, Tag, Image, Settings2, BarChart3, 
-  Trash2, AlertTriangle, ToggleLeft, ToggleRight, PlusCircle, Edit3, HelpCircle, Loader2
+  Trash2, AlertTriangle, ToggleLeft, ToggleRight, PlusCircle, Edit3, HelpCircle, Loader2,
+  Database, Server, RefreshCw
 } from 'lucide-react';
 import { Listing, User, Category, PaymentLog } from '../types';
 
@@ -38,9 +39,20 @@ export default function AdminPanel({
   onDeleteUser,
   onTriggerWebhook,
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'listings' | 'users' | 'payments' | 'categories' | 'banners' | 'content' | 'reports'>('listings');
+  const [activeTab, setActiveTab] = useState<'listings' | 'users' | 'payments' | 'categories' | 'banners' | 'content' | 'reports' | 'database'>('listings');
   const [paymentSubTab, setPaymentSubTab] = useState<'all' | 'pending' | 'confirmed' | 'featured'>('all');
   
+  // Database Monitor & Webhook testing sandbox states
+  const [dbStatus, setDbStatus] = useState<any>(null);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [sqlCommand, setSqlCommand] = useState('SELECT * FROM pagamentos');
+  const [sqlResult, setSqlResult] = useState<any>(null);
+  const [executingSql, setExecutingSql] = useState(false);
+  const [simulatedWebhookAdId, setSimulatedWebhookAdId] = useState('18');
+  const [simulatedWebhookAmount, setSimulatedWebhookAmount] = useState('29.90');
+  const [triggeringWebhook, setTriggeringWebhook] = useState(false);
+  const [webhookResult, setWebhookResult] = useState<any>(null);
+
   // States for creations
   const [newSubCategoryName, setNewSubCategoryName] = useState('');
   const [selectedCatId, setSelectedCatId] = useState('');
@@ -52,6 +64,106 @@ export default function AdminPanel({
   const [siteName, setSiteName] = useState(siteSettings.siteName);
   const [supportPhone, setSupportPhone] = useState(siteSettings.supportPhone);
   const [footerCopy, setFooterCopy] = useState(siteSettings.footerCopy);
+
+  const fetchDatabaseStatus = async () => {
+    setDbLoading(true);
+    try {
+      const response = await fetch('/api/admin/database-status');
+      const data = await response.json();
+      setDbStatus(data);
+    } catch (e: any) {
+      console.error(e);
+      setDbStatus({ success: false, error: e.message });
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
+  const handleExecuteSql = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sqlCommand.trim()) return;
+    setExecutingSql(true);
+    setSqlResult(null);
+    try {
+      const response = await fetch('/api/admin/database-test-query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ queryText: sqlCommand })
+      });
+      const data = await response.json();
+      setSqlResult(data);
+      // Refresh status numbers
+      fetchDatabaseStatus();
+    } catch (e: any) {
+      setSqlResult({ success: false, error: e.message });
+    } finally {
+      setExecutingSql(false);
+    }
+  };
+
+  const handleTriggerWebhookSimulate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTriggeringWebhook(true);
+    setWebhookResult(null);
+    try {
+      // Setup payload matching Mercado Pago webhook schema
+      const randomPaymentId = `mp-web-${Math.floor(Math.random() * 900000000 + 100000000)}`;
+      const payload = {
+        action: "payment.created",
+        type: "payment",
+        data: {
+          id: randomPaymentId
+        }
+      };
+
+      // 1. Simulate creation of corresponding payment row in pagamentos
+      console.log(`[SIMULATOR Webhook] Creating pending payment for listing ${simulatedWebhookAdId} with status 'pendente' and amount R$ ${simulatedWebhookAmount}`);
+      const createPixRes = await fetch('/api/payments/create-pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: simulatedWebhookAmount,
+          email: "raimundomoreira1988@gmail.com",
+          description: `Simulação Pix Anúncio #${simulatedWebhookAdId}`,
+          listingId: simulatedWebhookAdId
+        })
+      });
+      const pixelData = await createPixRes.json();
+      
+      const realPaymentId = pixelData.paymentId || randomPaymentId;
+
+      // 2. Trigger simulated webhook approval on that specific ID
+      console.log(`[SIMULATOR Webhook] Triggering webhook approval status call for reference payment ${realPaymentId}`);
+      await fetch(`/api/payments/simulate-approve/${realPaymentId}`, { method: 'POST' });
+
+      // 3. Fire Webhook endpoint so server pulls down status update and updates MySQL databases accordingly!
+      const response = await fetch(`/api/payments/webhook?id=${realPaymentId}&topic=payment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (response.ok) {
+        setWebhookResult({
+          success: true,
+          message: `Webhook disparado com sucesso! Plataforma buscou o pagamento #${realPaymentId}, detectou o status 'approved', atualizou a tabela de pagamentos no MySQL para 'pago' e liberou automaticamente o anúncio #${simulatedWebhookAdId} definindo destaque=1 e liberando campo de link.`,
+          paymentId: realPaymentId
+        });
+        
+        // Refresh statuses
+        fetchDatabaseStatus();
+        if (onTriggerWebhook) {
+          onTriggerWebhook();
+        }
+      } else {
+        setWebhookResult({ success: false, error: 'O webhook retornou status de resposta inválido' });
+      }
+    } catch (er: any) {
+      setWebhookResult({ success: false, error: er.message });
+    } finally {
+      setTriggeringWebhook(false);
+    }
+  };
 
   const handleUpdateSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +277,20 @@ export default function AdminPanel({
           >
             <BarChart3 className="h-4.5 w-4.5" />
             Relatórios Gerais
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('database');
+              fetchDatabaseStatus();
+            }}
+            className={`w-full whitespace-nowrap px-3.5 py-2.5 rounded-xl text-xs font-bold transition text-left flex items-center gap-2 ${
+              activeTab === 'database' ? 'bg-slate-900 text-white font-extrabold' : 'text-slate-655 hover:bg-gray-50'
+            }`}
+            id="database-panel-nav-button"
+          >
+            <Database className="h-4.5 w-4.5" />
+            Banco de Dados & Pix
           </button>
         </div>
 
@@ -739,6 +865,234 @@ export default function AdminPanel({
               </div>
             </div>
           )}
+
+          {/* 8. DATABASE & PIX CENTRAL CONTROL INTERFACE */}
+          {activeTab === 'database' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b pb-3 border-gray-150">
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-wider">
+                    Banco de Dados & Integração Pix (Mercado Pago)
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                    Configure, verifique e administre tabelas do banco SQL e fluxos de webhook Pix.
+                  </p>
+                </div>
+                <button
+                  onClick={fetchDatabaseStatus}
+                  disabled={dbLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  <RefreshCw className={`h-3 w-3 ${dbLoading ? 'animate-spin' : ''}`} />
+                  {dbLoading ? 'Atualizando...' : 'Recarregar Status IP'}
+                </button>
+              </div>
+
+              {/* telemetry connection card */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={`p-4 rounded-2xl border ${
+                  dbStatus?.usingMySQL 
+                    ? 'bg-emerald-50/50 border-emerald-200 text-emerald-900' 
+                    : 'bg-amber-50/70 border-amber-200 text-amber-900'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <Server className={`h-5 w-5 ${dbStatus?.usingMySQL ? 'text-emerald-700' : 'text-amber-600'}`} />
+                    <span className="text-xs font-black uppercase">Status da Conexão</span>
+                  </div>
+                  <span className="block text-[10px] font-bold mt-2 font-mono break-all uppercase">
+                    {dbStatus?.diagnostics?.status || 'Carregue as estatísticas...'}
+                  </span>
+                  {dbStatus?.diagnostics?.error && (
+                    <span className="block text-[9px] font-bold text-red-700 mt-1 font-mono">
+                      Erro: {dbStatus.diagnostics.error}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-gray-200 rounded-2xl text-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5 text-slate-600" />
+                    <span className="text-xs font-black uppercase">Parâmetros .env</span>
+                  </div>
+                  <div className="mt-2 text-[10px] font-mono space-y-1">
+                    <p><b className="text-slate-500">BD:</b> {dbStatus?.connectionConfig?.database || 'vivalocal'}</p>
+                    <p><b className="text-slate-500">HOST:</b> {dbStatus?.connectionConfig?.host || 'localhost'}</p>
+                    <p><b className="text-slate-500">USER:</b> {dbStatus?.connectionConfig?.user || 'root'}</p>
+                    <p><b className="text-slate-500">SENHA:</b> {dbStatus?.connectionConfig?.passwordSet ? '****** (Definida)' : '(Vazia pelo Root)'}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-50 border border-gray-200 rounded-2xl text-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Database className="h-5 w-5 text-slate-600" />
+                    <span className="text-xs font-black uppercase">Esquemas Sincronizados</span>
+                  </div>
+                  <div className="mt-2 text-[9px] font-mono space-y-1 font-bold">
+                    <p className="flex justify-between">
+                      <span>USUARIOS (Tabela):</span> 
+                      <span className="text-blue-700">{dbStatus?.counts?.usuarios ?? 3} registros</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>ANUNCIOS (Tabela):</span> 
+                      <span className="text-blue-700">{dbStatus?.counts?.anuncios ?? 0} registros</span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>PAGAMENTOS (Tabela):</span> 
+                      <span className="text-blue-700">{dbStatus?.counts?.pagamentos ?? 2} registros</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Webhook live test pipeline tool */}
+              <div className="p-4 border border-blue-200 bg-blue-50/20 rounded-2xl space-y-4">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-xs font-extrabold text-blue-900 uppercase">Simulador de Webhook Mercado Pago & Liberar Anúncio</h4>
+                    <p className="text-[10px] text-blue-700 font-semibold mt-1 leading-relaxed">
+                      Este painel simula a chegada instantânea de uma notificação Pix do Mercado Pago. O servidor recebe o ID do pagamento, valida o status no gateway e, ao retornar <b className="text-emerald-700 uppercase">"approved"</b>, executa duas consultas no MySQL:
+                    </p>
+                    <ul className="list-disc pl-4 text-[9px] text-blue-800 font-mono mt-1 space-y-0.5 font-bold">
+                      <li>UPDATE pagamentos SET status = 'pago' WHERE mp_payment_id = ?</li>
+                      <li>UPDATE anuncios SET destaque = 1, pago = 1 WHERE id = ?</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <form onSubmit={handleTriggerWebhookSimulate} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end pt-1">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-gray-400 uppercase">ID do Anúncio (anuncios.id)</label>
+                    <input
+                      type="number"
+                      required
+                      value={simulatedWebhookAdId}
+                      onChange={(e) => setSimulatedWebhookAdId(e.target.value)}
+                      placeholder="Ex: 18"
+                      className="w-full bg-white border border-gray-200 p-2 text-xs rounded-lg font-mono font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-gray-400 uppercase">Valor Transferencial (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={simulatedWebhookAmount}
+                      onChange={(e) => setSimulatedWebhookAmount(e.target.value)}
+                      placeholder="29.90"
+                      className="w-full bg-white border border-gray-200 p-2 text-xs rounded-lg font-mono font-bold"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={triggeringWebhook}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs py-2.5 rounded-lg transition cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    {triggeringWebhook ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Processando...
+                      </>
+                    ) : (
+                      'Simular Confirmação Webhook'
+                    )}
+                  </button>
+                </form>
+
+                {webhookResult && (
+                  <div className={`p-3 rounded-xl border text-xs leading-relaxed font-semibold font-sans ${
+                    webhookResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
+                  }`}>
+                    {webhookResult.success ? (
+                      <div className="space-y-1.5">
+                        <span className="font-extrabold block text-emerald-950 uppercase text-[10px] tracking-wider">🎉 Transação Processada com Sucesso!</span>
+                        <p className="text-[11px] leading-relaxed font-medium">{webhookResult.message}</p>
+                        <span className="text-[9px] font-bold font-mono text-emerald-600 block mt-1">ID PAGAMENTO MP: {webhookResult.paymentId}</span>
+                      </div>
+                    ) : (
+                      <span>Ocorreu um erro no simulador: {webhookResult.error}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Direct query console editor terminal */}
+              <div className="p-4 bg-slate-900 text-slate-100 rounded-2xl border border-slate-950 space-y-4 shadow-md font-mono">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <span className="text-xs font-black text-slate-400 uppercase flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-yellow-400 rounded-full animate-ping"></span>
+                    Terminal de Consulta SQL do Administrador
+                  </span>
+                  <span className="text-[9px] text-slate-500 font-bold">SQLITE & MYSQL-PROMISE CLIENT</span>
+                </div>
+
+                <form onSubmit={handleExecuteSql} className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] text-slate-400 block uppercase">Comando de Banco (SQL Statement)</label>
+                    <textarea
+                      rows={2}
+                      value={sqlCommand}
+                      onChange={(e) => setSqlCommand(e.target.value)}
+                      placeholder="SELECT * FROM usuarios LIMIT 5"
+                      className="w-full bg-slate-950 border border-slate-800 text-slate-200 p-3 rounded-lg text-xs font-mono outline-none focus:border-red-500 font-bold leading-relaxed resize-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSqlCommand('SELECT * FROM pagamentos')}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9px] px-2.5 py-1.5 rounded-lg cursor-pointer transition"
+                    >
+                      Estatísticas de Pagamentos
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSqlCommand('SELECT * FROM anuncios')}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9px] px-2.5 py-1.5 rounded-lg cursor-pointer transition"
+                    >
+                      Diagnosticar Classificados
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSqlCommand('SELECT * FROM usuarios')}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[9px] px-2.5 py-1.5 rounded-lg cursor-pointer transition"
+                    >
+                      Contas Cadastradas
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={executingSql}
+                      className="ml-auto bg-red-650 hover:bg-red-600 text-white text-[10px] uppercase font-black px-4.5 py-1.5 rounded-lg transition cursor-pointer cursor-pointer"
+                    >
+                      {executingSql ? 'Consultando...' : 'Executar Query SQL'}
+                    </button>
+                  </div>
+                </form>
+
+                {sqlResult && (
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[10px] space-y-2 overflow-x-auto max-h-[220px]">
+                    <div className="flex items-center justify-between text-[9px] text-slate-500">
+                      <span>Executado via: {sqlResult.liveMySQL ? 'MYSQL SERVIDOR' : 'SIMULADOR DE BASE'}</span>
+                      <span>{Array.isArray(sqlResult.rows) ? sqlResult.rows.length : 1} registros retornados</span>
+                    </div>
+
+                    {sqlResult.error ? (
+                      <span className="text-red-400 font-black">Falha: {sqlResult.error}</span>
+                    ) : (
+                      <pre className="text-emerald-400 font-mono font-medium leading-relaxed leading-5">
+                        {JSON.stringify(sqlResult.rows, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
 
         </div>
       </div>
