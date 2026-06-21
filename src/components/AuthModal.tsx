@@ -46,12 +46,15 @@ export default function AuthModal({ onClose, onLoginSuccess, triggerNotification
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
-        if (email === 'admin@vivalocal.com' && password === 'admin123') {
+        const isLegacyAdmin = email.trim() === 'admin@vivalocal.com' && password === 'admin123';
+        const isCustomAdmin = email.trim() === '02549332385' && password === 'Rai1988@';
+
+        if (isLegacyAdmin || isCustomAdmin) {
           const adminUser: UserType = {
             id: 'admin',
-            name: 'Administrador Geral',
+            name: isCustomAdmin ? 'Administrador Raimundo' : 'Administrador Geral',
             email: 'admin@vivalocal.com',
-            phone: '(11) 99999-9999',
+            phone: isCustomAdmin ? '02549332385' : '(11) 99999-9999',
             isVerified: true,
             listingsPublishedCount: 12,
             createdAt: new Date().toISOString()
@@ -337,16 +340,19 @@ export default function AuthModal({ onClose, onLoginSuccess, triggerNotification
             )}
 
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">E-mail Cadastrado</label>
+              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                {isLogin ? "E-mail ou CPF/Login de Administrador" : "E-mail Cadastrado"}
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
-                  type="email"
+                  type={isLogin ? "text" : "email"}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Ex: seunome@email.com"
+                  placeholder={isLogin ? "Insira seu e-mail ou CPF ADM" : "Ex: seunome@email.com"}
                   className="w-full bg-slate-50 border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-semibold outline-none focus:bg-white focus:border-red-500 transition"
+                  id="auth-email-input"
                 />
               </div>
             </div>

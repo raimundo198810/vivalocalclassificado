@@ -185,10 +185,11 @@ export default function Header({
           </button>
 
           {/* UPGRADED: Administrator Panel shortcut widget */}
-          {loggedInUser?.email === 'admin@vivalocal.com' && (
+          {(loggedInUser?.email === 'admin@vivalocal.com' || loggedInUser?.phone === '02549332385' || loggedInUser?.id === 'admin') && (
             <button
               onClick={() => setCurrentTab('admin')}
-              className={`flex items-center gap-1 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-800 px-3 py-2 rounded-xl text-xs font-black cursor-pointer transition`}
+              className={`flex items-center gap-1 bg-yellow-50 hover:bg-yellow-105 border border-yellow-250 text-yellow-800 px-3 py-2 rounded-xl text-xs font-black cursor-pointer transition`}
+              id="admin-portal-access-button"
             >
               <Sparkles className="h-3.5 w-3.5 text-yellow-600" />
               <span>ADMIN</span>

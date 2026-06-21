@@ -262,7 +262,10 @@ export default function AdminPanel({
                   </div>
                 ))}
               </div>
-                  {/* 3. PAYMENTS MONITORING WITH COMPREHENSIVE PAINEL FINANCEIRO */}
+            </div>
+          )}
+
+          {/* 3. PAYMENTS MONITORING WITH COMPREHENSIVE PAINEL FINANCEIRO */}
           {activeTab === 'payments' && (
             <div className="space-y-6">
               <div>
@@ -491,7 +494,6 @@ export default function AdminPanel({
                 )}
               </div>
             </div>
-          )}          </div>
           )}
 
           {/* 4. CATEGORIES EXPANSION */}
