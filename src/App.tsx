@@ -20,6 +20,7 @@ import LegalPages from './components/LegalPages';
 import AuthModal from './components/AuthModal';
 import ChatPanel from './components/ChatPanel';
 import AdminPanel from './components/AdminPanel';
+import PlansPage from './components/PlansPage';
 
 export default function App() {
   // --- Persistent Storage State Sync ---
@@ -423,11 +424,28 @@ export default function App() {
     }
   };
 
-  const handleUpgradeToPremium = (id: string) => {
+  const handleUpgradeToPremium = (id: string, planName: string = 'Destaque Premium', amount: number = 29.90) => {
     setListings((prev) =>
       prev.map((l) => (l.id === id ? { ...l, isPremium: true } : l))
     );
-    triggerAlert('success', 'Parabéns! Seu anúncio agora é Destaque Premium e aparecerá no topo do feed!');
+
+    // Record payment log
+    const newLog = {
+      id: `pay_${Date.now()}`,
+      userEmail: loggedInUser?.email || 'anonimo@vivalocal.com',
+      plan: planName,
+      amount: amount,
+      createdAt: new Date().toISOString()
+    };
+    const updatedLogs = [newLog, ...paymentLogs];
+    setPaymentLogs(updatedLogs);
+    try {
+      localStorage.setItem('vivalocal_payments', JSON.stringify(updatedLogs));
+    } catch (e) {
+      console.error(e);
+    }
+
+    triggerAlert('success', `Parabéns! Seu anúncio agora é ${planName} e aparecerá no topo do feed!`);
   };
 
   return (
@@ -505,6 +523,16 @@ export default function App() {
               categoriesList={CATEGORIES}
             />
           </div>
+        ) : currentTab === 'plans' ? (
+          <PlansPage
+            myListings={myListings}
+            onUpgradeToPremium={handleUpgradeToPremium}
+            triggerNotification={(type, text) => triggerAlert(type, text)}
+            onNavigateHome={() => {
+              setCurrentTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
         ) : currentTab === 'my-ads' ? (
           // Case 3: Personal uploaded items list dashboard manager
           <MyAdsDashboard

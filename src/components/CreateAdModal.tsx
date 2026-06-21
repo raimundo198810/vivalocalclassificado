@@ -86,6 +86,7 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
   const [cardCvv, setCardCvv] = useState('738');
   const [pixKeyCopied, setPixKeyCopied] = useState(false);
   const [pixCodeCopied, setPixCodeCopied] = useState(false);
+  const [copyAlertText, setCopyAlertText] = useState('');
 
   // Auto-set subcategory when category shifts
   useEffect(() => {
@@ -1002,11 +1003,15 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                               onClick={() => {
                                 navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
                                 setPixKeyCopied(true);
-                                setTimeout(() => setPixKeyCopied(false), 2000);
+                                setCopyAlertText('Chave PIX copiada!');
+                                setTimeout(() => {
+                                  setPixKeyCopied(false);
+                                  setCopyAlertText('');
+                                }, 2500);
                               }}
                               className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
                             >
-                              {pixKeyCopied ? 'Copiado!' : 'Copiar E-mail'}
+                              {pixKeyCopied ? 'Copiado!' : 'Copiar Chave PIX'}
                             </button>
                           </div>
                         </div>
@@ -1023,7 +1028,11 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                               onClick={() => {
                                 navigator.clipboard.writeText(pixCode);
                                 setPixCodeCopied(true);
-                                setTimeout(() => setPixCodeCopied(false), 2000);
+                                setCopyAlertText('Código Pix Copia e Cola copiado!');
+                                setTimeout(() => {
+                                  setPixCodeCopied(false);
+                                  setCopyAlertText('');
+                                }, 2500);
                               }}
                               className="bg-red-650 text-white hover:bg-red-700 bg-red-600 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors shadow-sm"
                             >
@@ -1108,6 +1117,12 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
           )}
         </div>
       </div>
+      {copyAlertText && (
+        <div className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 bg-slate-900 border border-slate-800 text-white font-semibold rounded-2xl px-5 py-3.5 shadow-2xl animate-scaleUp max-w-sm">
+          <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+          <span className="text-xs leading-relaxed">{copyAlertText}</span>
+        </div>
+      )}
     </div>
   );
 }

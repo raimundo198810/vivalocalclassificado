@@ -318,6 +318,7 @@ export default function PlansPage({
                     onClick={() => {
                       navigator.clipboard.writeText(pixCode);
                       setPixPayloadCopied(true);
+                      triggerNotification('success', 'Código Pix Copia e Cola copiado!');
                       setTimeout(() => setPixPayloadCopied(false), 2000);
                     }}
                     className="bg-red-650 text-white hover:bg-red-700 bg-red-600 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
@@ -339,11 +340,12 @@ export default function PlansPage({
                     onClick={() => {
                       navigator.clipboard.writeText('raimundomoreira1988@gmail.com');
                       setPixKeyCopied(true);
+                      triggerNotification('success', 'Chave PIX copiada!');
                       setTimeout(() => setPixKeyCopied(false), 2000);
                     }}
                     className="bg-slate-900 text-white hover:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg shrink-0 cursor-pointer transition-colors"
                   >
-                    {pixKeyCopied ? 'Copiado!' : 'Copiar E-mail'}
+                    {pixKeyCopied ? 'Copiado!' : 'Copiar Chave PIX'}
                   </button>
                 </div>
               </div>

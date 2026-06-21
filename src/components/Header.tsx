@@ -129,6 +129,17 @@ export default function Header({
           </button>
 
           <button
+            onClick={() => setCurrentTab('plans')}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
+              currentTab === 'plans'
+                ? 'text-red-700 bg-red-50'
+                : 'text-gray-600 hover:text-red-600 hover:bg-gray-50'
+            }`}
+          >
+            <span>PLANOS</span>
+          </button>
+
+          <button
             onClick={() => setCurrentTab('my-ads')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-black rounded-xl transition cursor-pointer ${
               currentTab === 'my-ads'
