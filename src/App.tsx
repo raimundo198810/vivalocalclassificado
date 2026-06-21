@@ -11,12 +11,15 @@ import ListingCard from './components/ListingCard';
 import ListingDetail from './components/ListingDetail';
 import CreateAdModal from './components/CreateAdModal';
 import MyAdsDashboard from './components/MyAdsDashboard';
-import { Listing, SearchFilters, CategoryId } from './types';
+import { Listing, SearchFilters, CategoryId, User as UserType } from './types';
 import { INITIAL_LISTINGS, CATEGORIES } from './data/seedData';
 import { Heart, Sparkles, AlertCircle, ShoppingBag, PlusCircle, CheckCircle } from 'lucide-react';
 // @ts-ignore
 import brandLogo3d from './assets/images/vivalocal_logo_3d_1782000935551.jpg';
 import LegalPages from './components/LegalPages';
+import AuthModal from './components/AuthModal';
+import ChatPanel from './components/ChatPanel';
+import AdminPanel from './components/AdminPanel';
 
 export default function App() {
   // --- Persistent Storage State Sync ---
@@ -47,6 +50,87 @@ export default function App() {
     }
   });
 
+  // --- User registration & Admin state engine ---
+  const [loggedInUser, setLoggedInUser] = useState<UserType | null>(() => {
+    try {
+      const stored = localStorage.getItem('vivalocal_active_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const [users, setUsers] = useState<UserType[]>(() => {
+    try {
+      const stored = localStorage.getItem('vivalocal_users');
+      if (stored) return JSON.parse(stored);
+      // default seed users for admin panel
+      const initialUsers: UserType[] = [
+        { id: 'user_1', name: 'Raimundo Moreira', email: 'raimundo@vivalocal.com', phone: '(49) 99805-7924', isVerified: true, listingsPublishedCount: 4, createdAt: new Date().toISOString() },
+        { id: 'user_2', name: 'Marcos Silva', email: 'marcos@gmail.com', phone: '(11) 98765-4321', isVerified: true, listingsPublishedCount: 1, createdAt: new Date().toISOString() },
+        { id: 'user_3', name: 'Roberto Santana', email: 'roberto@imoveis.com.br', phone: '(11) 97777-1234', isVerified: false, listingsPublishedCount: 2, createdAt: new Date().toISOString() }
+      ];
+      localStorage.setItem('vivalocal_users', JSON.stringify(initialUsers));
+      return initialUsers;
+    } catch {
+      return [];
+    }
+  });
+
+  const [paymentLogs, setPaymentLogs] = useState<any[]>(() => {
+    try {
+      const stored = localStorage.getItem('vivalocal_payments');
+      if (stored) return JSON.parse(stored);
+      const initialPayments = [
+        { id: 'pay_1', userEmail: 'raimundo@vivalocal.com', plan: 'Destaque VIP 30 dias', amount: 49.90, createdAt: new Date().toISOString() },
+        { id: 'pay_2', userEmail: 'marcos@gmail.com', plan: 'Destaque Bronze 7 dias', amount: 19.90, createdAt: new Date().toISOString() }
+      ];
+      localStorage.setItem('vivalocal_payments', JSON.stringify(initialPayments));
+      return initialPayments;
+    } catch {
+      return [];
+    }
+  });
+
+  const [siteSettings, setSiteSettings] = useState(() => ({
+    siteName: 'Vivalocal Classificados 3D',
+    supportPhone: '(11) 4004-9050',
+    footerCopy: '© 2026 Vivalocal Classificados. Todos os direitos reservados.'
+  }));
+
+  const handleUpdateProfile = (updated: UserType) => {
+    setLoggedInUser(updated);
+    localStorage.setItem('vivalocal_active_user', JSON.stringify(updated));
+    setUsers(prev => prev.map(u => u.id === updated.id ? updated : u));
+    triggerAlert('success', 'Perfil comercial atualizado com sucesso!');
+  };
+
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    localStorage.removeItem('vivalocal_active_user');
+    setCurrentTab('home');
+    triggerAlert('info', 'Sessão encerrada com segurança.');
+  };
+
+  const handleToggleUserStatus = (userId: string) => {
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, isVerified: !u.isVerified } : u));
+    triggerAlert('success', 'Status do usuário modificado!');
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (window.confirm('Tem certeza de que deseja banir/excluir este usuário?')) {
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      triggerAlert('info', 'Usuário removido da base de dados do Vivalocal.');
+    }
+  };
+
+  const handleApproveAd = (id: string, isApproved: boolean) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, isApproved } : l));
+    triggerAlert('success', isApproved ? 'Anúncio aprovado para o feed público!' : 'Anúncio rejeitado e retirado do feed.');
+  };
+
   // Save states to local storage
   useEffect(() => {
     localStorage.setItem('vivalocal_listings', JSON.stringify(listings));
@@ -60,8 +144,12 @@ export default function App() {
     localStorage.setItem('vivalocal_my_created', JSON.stringify(myCreatedIds));
   }, [myCreatedIds]);
 
+  useEffect(() => {
+    localStorage.setItem('vivalocal_users', JSON.stringify(users));
+  }, [users]);
+
   // --- UI Layout state control ---
-  const [currentTab, setCurrentTab] = useState<'home' | 'my-ads' | 'favorites' | 'about' | 'privacy' | 'cookies' | 'terms' | 'sitemap' | 'contact' | 'help'>('home');
+  const [currentTab, setCurrentTab] = useState<'home' | 'my-ads' | 'favorites' | 'about' | 'privacy' | 'cookies' | 'terms' | 'sitemap' | 'contact' | 'help' | 'chat' | 'admin'>('home');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [showNotification, setShowNotification] = useState<{ type: 'success' | 'info'; text: string } | null>(null);
@@ -303,6 +391,9 @@ export default function App() {
         setSelectedCity={setSelectedCity}
         onAnnounceClick={() => setIsCreateModalOpen(true)}
         favoritesCount={favorites.length}
+        loggedInUser={loggedInUser}
+        onTriggerLogin={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
       />
 
       {/* Interactive visual search banner (Only active on Home tab) */}
@@ -368,9 +459,29 @@ export default function App() {
             onUpgradeToPremium={handleUpgradeToPremium}
             onSelectListing={handleSelectListing}
             onAnnounceClick={() => setIsCreateModalOpen(true)}
+            loggedInUser={loggedInUser}
+            onLogout={handleLogout}
+            onUpdateProfile={handleUpdateProfile}
+            onTriggerLogin={() => setShowAuthModal(true)}
+          />
+        ) : currentTab === 'chat' ? (
+          // Case 4: Advanced peer-to-peer Chat Panel
+          <ChatPanel />
+        ) : currentTab === 'admin' ? (
+          // Case 5: Master Administrative Dashboard portal
+          <AdminPanel
+            listings={listings}
+            onApproveAd={handleApproveAd}
+            users={users}
+            onToggleUserStatus={handleToggleUserStatus}
+            paymentLogs={paymentLogs}
+            categories={CATEGORIES}
+            siteSettings={siteSettings}
+            onUpdateSiteSettings={(settings) => setSiteSettings(prev => ({ ...prev, ...settings }))}
+            onDeleteUser={handleDeleteUser}
           />
         ) : (
-          // Case 3: Public listings browser (Home / Search & Favorites tabs)
+          // Case 6: Public listings browser (Home / Search & Favorites tabs)
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
             {/* Left sidebar filters */}
             <div className="lg:col-span-1 sticky top-28 hidden lg:block">
@@ -481,6 +592,19 @@ export default function App() {
         <CreateAdModal
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={handleCreateAd}
+        />
+      )}
+
+      {/* Multi-tenant secure Auth Modals with OTP & Email password recovery */}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onLoginSuccess={(user) => {
+            setLoggedInUser(user);
+            setShowAuthModal(false);
+            triggerAlert('success', `Bem-vindo de volta, ${user.name}!`);
+          }}
+          triggerNotification={(text) => triggerAlert('success', text)}
         />
       )}
 

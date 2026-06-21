@@ -60,6 +60,8 @@ export interface User {
   password?: string;
   isVerified?: boolean;
   avatar?: string;
+  avatarUrl?: string;
+  bio?: string;
   listingsPublishedCount: number;
   createdAt: string;
 }
