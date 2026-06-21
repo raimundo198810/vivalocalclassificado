@@ -94,11 +94,65 @@ export default function App() {
     }
   });
 
+  const [categories, setCategories] = useState(() => {
+    try {
+      const stored = localStorage.getItem('vivalocal_categories');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return CATEGORIES;
+  });
+
+  const [banners, setBanners] = useState(() => {
+    try {
+      const stored = localStorage.getItem('vivalocal_banners');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return [
+      { id: 'b1', imgUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800', label: 'Feira de Automóveis Vivalocal SP', link: '#' },
+      { id: 'b2', imgUrl: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800', label: 'Imóveis em Destaque no Rio', link: '#' }
+    ];
+  });
+
   const [siteSettings, setSiteSettings] = useState(() => ({
     siteName: 'Vivalocal Classificados 3D',
     supportPhone: '(11) 4004-9050',
     footerCopy: '© 2026 Vivalocal Classificados. Todos os direitos reservados.'
   }));
+
+  useEffect(() => {
+    localStorage.setItem('vivalocal_categories', JSON.stringify(categories));
+  }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('vivalocal_banners', JSON.stringify(banners));
+  }, [banners]);
+
+  const handleAddSubCategory = (catId: any, subName: string) => {
+    setCategories(prev => prev.map(c => {
+      if (c.id === catId) {
+        return {
+          ...c,
+          subCategories: [...c.subCategories, subName]
+        };
+      }
+      return c;
+    }));
+    triggerAlert('success', `Subcategoria '${subName}' criada com sucesso!`);
+  };
+
+  const handleAddBanner = (newBanner: { imgUrl: string; label: string; link: string }) => {
+    const bannerItem = {
+      id: `banner_${Date.now()}`,
+      ...newBanner
+    };
+    setBanners(prev => [...prev, bannerItem]);
+    triggerAlert('success', `Banner '${newBanner.label}' adicionado com sucesso!`);
+  };
+
+  const handleRemoveBanner = (id: string) => {
+    setBanners(prev => prev.filter(b => b.id !== id));
+    triggerAlert('success', 'Banner removido do painel.');
+  };
 
   const handleUpdateProfile = (updated: UserType) => {
     setLoggedInUser(updated);
@@ -475,7 +529,11 @@ export default function App() {
             users={users}
             onToggleUserStatus={handleToggleUserStatus}
             paymentLogs={paymentLogs}
-            categories={CATEGORIES}
+            categories={categories}
+            onAddSubCategory={handleAddSubCategory}
+            banners={banners}
+            onAddBanner={handleAddBanner}
+            onRemoveBanner={handleRemoveBanner}
             siteSettings={siteSettings}
             onUpdateSiteSettings={(settings) => setSiteSettings(prev => ({ ...prev, ...settings }))}
             onDeleteUser={handleDeleteUser}

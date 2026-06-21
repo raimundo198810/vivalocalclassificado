@@ -42,6 +42,22 @@ export default function ListingDetail({
   const [newReviewStars, setNewReviewStars] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState('');
 
+  // Dynamic activeImage sync on listing switch
+  useEffect(() => {
+    setActiveImage(listing.imageUrl);
+  }, [listing.id, listing.imageUrl]);
+
+  // Extract YouTube embed URL
+  const getYouTubeEmbedUrl = (url: string | undefined): string | null => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[2].length === 11) {
+      return `https://www.youtube.com/embed/${match[2]}`;
+    }
+    return null;
+  };
+
   // Initial multi-images sequence
   const listImages = listing.images && listing.images.length > 0 
     ? listing.images 
@@ -49,7 +65,7 @@ export default function ListingDetail({
         listing.imageUrl,
         'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=80',
         'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800&auto=format&fit=crop&q=80'
-      ];
+      ].filter(Boolean);
 
   const currentCat = CATEGORIES.find((cat) => cat.id === listing.category);
 
@@ -270,20 +286,35 @@ export default function ListingDetail({
               <div className="pt-4 border-t border-gray-150">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-3 flex items-center gap-2">
                   <PlayCircle className="h-5 w-5 text-red-500 shrink-0" />
-                  <span>Demonstração em Vídeo</span>
+                  <span>Demonstração em Vídeo (Até 1 Vídeo por Anúncio)</span>
                 </h3>
-                <div className="aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col items-center justify-center text-center p-6 relative group cursor-pointer shadow-inner">
-                  <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800')] bg-cover opacity-30 group-hover:scale-105 transition duration-500"></div>
-                  <div className="relative z-10 space-y-4">
-                    <div className="h-16 w-16 rounded-full bg-red-600 group-hover:bg-red-700 text-white flex items-center justify-center mx-auto shadow-2xl transition duration-300 transform group-hover:scale-110 active:scale-95">
-                      <PlayCircle className="h-9 w-9 text-white ml-0.5 fill-current" />
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-sm text-white">Anúncio Demonstrativo Exclusivo Vivalocal Vídeo</h4>
-                      <p className="text-xs text-gray-400 font-semibold mt-1">Vídeo anexado pelo anunciante. Clique para reproduzir com áudio.</p>
+                {listing.youtubeUrl && getYouTubeEmbedUrl(listing.youtubeUrl) ? (
+                  <div className="aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 relative shadow-inner">
+                    <iframe
+                      src={getYouTubeEmbedUrl(listing.youtubeUrl) || undefined}
+                      title="Demonstração em Vídeo do Anúncio"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-video bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex flex-col items-center justify-center text-center p-6 relative group shadow-inner">
+                    <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800')] bg-cover opacity-10 transition duration-500"></div>
+                    <div className="relative z-10 space-y-3">
+                      <div className="h-14 w-14 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center mx-auto shadow-xl">
+                        <PlayCircle className="h-8 w-8 text-slate-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-xs text-slate-300">Nenhum vídeo adicional anexado</h4>
+                        <p className="text-[10px] text-gray-400 font-semibold mt-1 max-w-md mx-auto">
+                          Os anunciantes podem adicionar até 1 vídeo do YouTube aos seus anúncios para detalhar o item com som e imagem.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* UPGRADED: Dynamic View Stats Analytics (Bar Graph/Interactive Indicators) */}

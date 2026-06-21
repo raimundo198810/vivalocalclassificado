@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, MapPin, AlertCircle, Sparkles, Image as ImageIcon, CreditCard, QrCode, Flame, ShieldCheck, Loader2, Upload } from 'lucide-react';
+import { X, Check, MapPin, AlertCircle, Sparkles, Image as ImageIcon, CreditCard, QrCode, Flame, ShieldCheck, Loader2, Upload, PlayCircle } from 'lucide-react';
 import { CATEGORIES, BRAZIL_REGIONS } from '../data/seedData';
 import { Listing, CategoryId } from '../types';
 
@@ -532,8 +532,9 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
 
               {/* YouTube Video URL Input matching item 14 */}
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-1.5">
-                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                  Link de Vídeo do YouTube (Opcional)
+                <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <PlayCircle className="h-4.5 w-4.5 text-red-600 animate-pulse" />
+                  Link de Vídeo do YouTube (Opcional - Máx: 1 Vídeo)
                 </label>
                 <input
                   type="url"
@@ -542,8 +543,8 @@ export default function CreateAdModal({ onClose, onSubmit }: CreateAdModalProps)
                   placeholder="Ex: https://www.youtube.com/watch?v=..."
                   className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-semibold text-slate-850 outline-none focus:border-red-500 transition-all"
                 />
-                <span className="text-[9px] text-gray-400 font-semibold block leading-relaxed animate-pulse">
-                  Insira o link de um vídeo do YouTube sobre o seu item para enriquecer o anúncio e ganhar relevância!
+                <span className="text-[9px] text-gray-400 font-semibold block leading-relaxed">
+                  Insira o link de 1 vídeo do YouTube sobre o seu item para enriquecer o anúncio! Cada anúncio suporta de forma excelente <strong className="text-slate-800 font-bold">até 10 fotos</strong> no carrossel de exibição e <strong className="text-slate-800 font-bold">até 1 vídeo incorporado</strong>.
                 </span>
               </div>
             </div>

@@ -22,6 +22,7 @@ export default function AuthModal({ onClose, onLoginSuccess, triggerNotification
   const [recoverySent, setRecoverySent] = useState(false);
   const [otpMode, setOtpMode] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState('905792');
   const [pendingUser, setPendingUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -102,11 +103,14 @@ export default function AuthModal({ onClose, onLoginSuccess, triggerNotification
       };
 
       setLoading(true);
+      const randomPin = Math.floor(100000 + Math.random() * 900000).toString();
       setTimeout(() => {
         setLoading(false);
         setPendingUser(tempUser);
+        setGeneratedOtp(randomPin);
+        setOtpCode(randomPin); // Autopopulate for ultra-convenient demo signup!
         setOtpMode(true);
-        triggerNotification('info', `Código de verificação enviado por e-mail para ${email}`);
+        triggerNotification('info', `Código de segurança simulado para ${email}: ${randomPin}`);
       }, 1000);
     }
   };
@@ -242,13 +246,33 @@ export default function AuthModal({ onClose, onLoginSuccess, triggerNotification
               <ShieldCheck className="h-8 w-8 text-red-600 shrink-0" />
               <div>
                 <h4 className="text-xs font-black text-slate-800">Verifique seu E-mail</h4>
-                <p className="text-[10px] text-gray-500 font-medium leading-none mt-0.5">Enviamos um token de segurança.</p>
+                <p className="text-[10px] text-gray-500 font-medium leading-none mt-0.5">Enviamos um token de segurança simulado.</p>
               </div>
             </div>
 
             <p className="text-xs text-gray-500 leading-relaxed font-semibold">
               O Vivalocal preza pela segurança ativa de transações. Insira abaixo o código de validação recebido por e-mail para validar seus acessos.
             </p>
+
+            {/* Simulated Email Warning Box for easy UI testing */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2 animate-fadeIn text-xs shadow-sm">
+              <div className="flex items-center gap-2 text-amber-800 font-black text-[10px] uppercase tracking-wider">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                </span>
+                <span>📋 Ambientes de Teste / Demonstração</span>
+              </div>
+              <p className="text-[11px] text-amber-700 leading-normal font-semibold">
+                Como os e-mails reais dependem de servidores de envio configurados e para garantir privacidade total dos usuários, geramos um código secreto fictício instantaneamente:
+              </p>
+              <div className="flex items-center justify-center bg-white border border-amber-150 py-2 rounded-xl mt-1">
+                <span className="text-slate-905 text-lg font-black tracking-[0.25em]">{generatedOtp}</span>
+              </div>
+              <p className="text-[10px] text-amber-600 font-medium leading-tight text-center">
+                Preenchemos o campo abaixo automaticamente para você! Basta clicar no botão abaixo para concluir o registro de forma rápida.
+              </p>
+            </div>
 
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center block">Código de Validação</label>
